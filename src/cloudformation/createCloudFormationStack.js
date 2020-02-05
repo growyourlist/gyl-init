@@ -10,30 +10,33 @@ const StackName = 'GrowYourList';
 
 const createCloudFormationStack = async params => {
 	const cloudFormation = new AWS.CloudFormation();
-	Logger.info(
-		`Creating CloudFormation stack ${StackName}. This process can ` +
-			'take several minutes...'
-	);
-	await cloudFormation
-		.validateTemplate({
-			TemplateBody: fs
-				.readFileSync(path.join(__dirname, 'gyl-template.yaml'))
-				.toString('utf8'),
-		})
-		.promise();
-
+	const s3 = new AWS.S3();
 	const {
 		LambdaBucketName,
 		ApiAuthKeyHash,
 		DbTablePrefix,
 		SesSourceEmail,
 	} = params;
+	Logger.info('Uploading CloudFormation template to bucket')
+	await s3.putObject({
+		Bucket: LambdaBucketName,
+		Key: 'gyl-template.yaml',
+		ContentType: 'application/x-yaml',
+		Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml'))
+	}).promise()
+	Logger.info(
+		`Creating CloudFormation stack ${StackName}. This process can ` +
+			'take several minutes...'
+	);
+	await cloudFormation
+		.validateTemplate({
+			TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template.yaml`,
+		})
+		.promise();
 	await cloudFormation
 		.createStack({
 			StackName,
-			TemplateBody: fs
-				.readFileSync(path.join(__dirname, 'gyl-template.yaml'))
-				.toString('utf8'),
+			TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template.yaml`,
 			Parameters: [
 				{ ParameterKey: 'KeyName', ParameterValue: GylEc2MainKeyName },
 				{ ParameterKey: 'GylVersion', ParameterValue: GylVersion },
