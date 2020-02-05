@@ -282,7 +282,7 @@ const shorthand = {
             }
           ]
         },
-        'function': {
+        'func': {
           'zipfile': 'gyl-admin-template-get-dist.zip',
           'description': 'Gets an email template.',
         }
@@ -297,11 +297,30 @@ const shorthand = {
             }
           ]
         },
-        'function': {
+        'func': {
           'zipfile': 'gyl-admin-template-delete-dist.zip',
           'description': 'Deletes an email template.',
         }
       }
+    }
+  },
+  'Templates': {
+    '_methods': {
+      'GET': {
+        'role': {
+          'dependsOn': [],
+          'permissions': [
+            {
+              'actions': [ 'ses:ListTemplates' ],
+              'resources': '*',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-templates-get-dist.zip',
+          'description': 'Gets a list of meta info about templates.',
+        }
+      },
     }
   }
 }
