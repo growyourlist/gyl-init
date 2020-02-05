@@ -1,0 +1,1074 @@
+Parameters:
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the GylEC2Main instance
+    Type: AWS::EC2::KeyPair::KeyName
+  GylVersion:
+    Description: GYL Version
+    Type: String
+  LambdaBucketName:
+    Description: Lambda Bucket
+    Type: String
+  ApiAuthKeyHash:
+    Description: Key for authorizing API requests
+    Type: String
+  DbTablePrefix:
+    Description: Prefix for DynamoDB tables
+    Type: String
+  SesSourceEmail:
+    Description: Source email used by SES
+    Type: String
+Mappings:
+  RegionMap:
+    us-east-1:
+      AMI: ami-062f7200baf2fa504
+    us-east-2:
+      AMI: ami-02ccb28830b645a41
+    us-west-1:
+      AMI: ami-03caa3f860895f82e
+    us-west-2:
+      AMI: ami-04590e7389a6e577c
+    sa-east-1:
+      AMI: ami-09de7b4017733e2af
+    eu-north-1:
+      AMI: ami-0662eb9b9b8685935
+    eu-west-3:
+      AMI: ami-007fae589fdf6e955
+    eu-west-2:
+      AMI: ami-0089b31e09ac3fffc
+    eu-west-1:
+      AMI: ami-0713f98de93617bb4
+    eu-central-1:
+      AMI: ami-07cda0db070313c52
+    ca-central-1:
+      AMI: ami-0a269ca7cc3e3beff
+    ap-northeast-1:
+      AMI: ami-011facbea5ec0363b
+    ap-southeast-2:
+      AMI: ami-0b8b10b5bf11f3a22
+    ap-southeast-1:
+      AMI: ami-05c64f7b4062b0a21
+Resources:
+
+  # EC2
+  GylEC2Main:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref GylEC2MainSecurityGroup
+      ImageId: !FindInMap
+        - RegionMap
+        - !Ref 'AWS::Region'
+        - AMI
+      BlockDeviceMappings:
+        - DeviceName: '/dev/xvda'
+          Ebs:
+            VolumeType: 'gp2'
+            VolumeSize: '8'
+            DeleteOnTermination: 'true'
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -xe
+            - |
+              # Install the files and packages from the metadata
+            - '/opt/aws/bin/cfn-init -v'
+            - ' --stack '
+            - !Ref 'AWS::StackName'
+            - ' --resource GylEC2Main'
+            - ' --region '
+            - !Ref 'AWS::Region'
+            - ' --configsets installGylDependencies'
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          installGylDependencies:
+            - installGylDependencies
+        installGylDependencies:
+          files:
+            '/tmp/gyl-install-dependencies.sh':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: !Join
+                - '\n'
+                - - '#!/bin/bash'
+                  - '# Install Node and Yarn'
+                  - >-
+                    curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+                  - 'sudo yum install -y nodejs'
+                  - 'sudo yum install -y gcc-c++ make'
+                  - >-
+                    curl -sL https://dl.yarnpkg.com/rpm/yarn.repo |
+                    sudo tee /etc/yum.repos.d/yarn.repo
+                  - 'sudo yum install -y yarn'
+                  - ''
+          commands:
+            runGyl001:
+              command: 'sh /tmp/gyl-install-dependencies.sh'
+  GylEC2MainSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Enable SSH access via port 22
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: '22'
+            ToPort: '22'
+            CidrIp: 0.0.0.0/0
+
+  # API Meta
+  GylApiAuthorizerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-api-authorizer-dist.zip
+      Description: Authorizes requests to the GYL API
+      FunctionName: GylApiAuthorizer
+      Handler: index.authorizer
+      Runtime: nodejs12.x
+      Role: !GetAtt
+        - GylBasicLambdaRole
+        - Arn
+      Environment:
+        Variables:
+          ApiAuthKeyHash: !Ref ApiAuthKeyHash
+  GylInvokeApiAuthorizerRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylApiAuthorizerLambda
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylInvokeApiAuthorizerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt
+                  - GylApiAuthorizerLambda
+                  - Arn
+  GylApiAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    DependsOn:
+      - GylApiAuthorizerLambda
+    Properties:
+      Name: GylApiAuthorizer
+      RestApiId:
+        Ref: GylApi
+      Type: REQUEST
+      AuthorizerUri: !Join
+        - ''
+        - - 'arn:aws:apigateway:'
+          - !Ref 'AWS::Region'
+          - ':lambda:path/2015-03-31/functions/'
+          - !GetAtt
+            - GylApiAuthorizerLambda
+            - Arn
+          - /invocations
+      IdentitySource: method.request.header.X-Gyl-Auth-Key
+      Name: GylApiAuthorizer
+      AuthorizerResultTtlInSeconds: 60
+      AuthorizerCredentials: !GetAtt
+        - GylInvokeApiAuthorizerRole
+        - Arn
+  GylApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: 'GrowYourList API'
+      Description: 'API to interact with the GrowYourList mailing list system'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  GylApiBetaStage:
+    Type: AWS::ApiGateway::Stage
+    DependsOn:
+      - GylApiDeployment
+    Properties:
+      DeploymentId: !Ref GylApiDeployment
+      RestApiId: !Ref GylApi
+      StageName: beta
+  GylApiCloudWatchLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        -
+          PolicyName: GylApiCloudWatchPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
+                Resource: '*'
+  GylApiAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt
+        - GylApiCloudWatchLogsRole
+        - Arn
+  GylApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - GylApiPingGet
+      - GylApiAuthPingGet
+      - GylApiSubscriberPost
+      - GylApiSubscriberDelete
+    Properties:
+      RestApiId:
+        Ref: GylApi
+  GylApiEmptyModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: application/json
+      Description: This is a default empty schema model
+      Name: GylApiEmptyModel
+      RestApiId:
+        Ref: GylApi
+      Schema: !Join
+        - ''
+        - - '{'
+          - '"$schema":"http://json-schema.org/draft-04/schema#",'
+          - '"title":"Empty Schema",'
+          - '"type":"object",'
+          - '"definitions":{}'
+          - '}'
+
+  # API Lambda integrations
+  GylBasicLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ## Api Ping
+  GylPingLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: !Join
+         - ''
+         - - 'exports.handler=async e=>('
+           - '{statusCode:200,body:JSON.stringify("OK"),headers:{'
+           - "'Access-Control-Allow-Origin':'*'"
+           - '}}'
+           - ')'
+      Description: Returns 200 OK
+      FunctionName: GylPingLambda
+      Handler: index.handler
+      Role: !GetAtt
+        - GylBasicLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+  GylPingPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylPingLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylApi
+          - '/*'
+  GylApiPingResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !GetAtt
+        - GylApi
+        - RootResourceId
+      PathPart: ping
+  GylApiPingOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiPingResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'GET,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylApiPingGet:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylPingPermission
+    Properties:
+      HttpMethod: GET
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiPingResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylPingLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  ## Api Auth Ping
+  GylApiAuthPingResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !GetAtt
+        - GylApi
+        - RootResourceId
+      PathPart: auth-ping
+  GylApiAuthPingOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiAuthPingResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'GET,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylApiAuthPingGet:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylPingPermission
+    Properties:
+      HttpMethod: GET
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiAuthPingResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylPingLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+
+  ## Api admin resource
+  GylApiAdminResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !GetAtt
+        - GylApi
+        - RootResourceId
+      PathPart: admin
+
+  ## Api Subscriber
+  ### BEGIN GENERATED PART
+  GylAutoresponderPostLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSettingsTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylAutoresponderPostLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  - !GetAtt
+                    - GylSettingsTable
+                    - Arn
+  GylAutoresponderPostLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-autoresponder-post-dist.zip
+      Description: Posts (creates or updates) an autoresponder
+      FunctionName: GylAutoresponderPost
+      Handler: index.handler
+      Role: !GetAtt
+        - GylAutoresponderPostLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylAutoresponderPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylAutoresponderPostLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylApi
+          - '/*'
+  GylApiAutoresponderPost:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAutoresponderPostPermission
+    Properties:
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiAutoresponderResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylAutoresponderPostLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylApiAutoresponderResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !Ref GylApiAdminResource
+      PathPart: autoresponder
+  GylApiAutoresponderOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiAutoresponderResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'POST,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylSubscriberPostLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSubscribersTable
+      - GylQueueTable
+      - GylSettingsTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylSubscriberPostLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - ses:SendTemplatedEmail
+                Resource: '*'
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylSubscribersTable
+                        - Arn
+                      - /index/EmailToStatusIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource:
+                  - !GetAtt
+                    - GylSubscribersTable
+                    - Arn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt
+                    - GylSettingsTable
+                    - Arn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt
+                    - GylQueueTable
+                    - Arn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylQueueTable
+                        - Arn
+                      - /index/SubscriberIdIndex
+  GylSubscriberPostLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-subscriber-post-dist.zip
+      Description: Posts (create or update if email exists) a subscriber
+      FunctionName: GylSubscriberPost
+      Handler: index.handler
+      Role: !GetAtt
+        - GylSubscriberPostLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+          SOURCE_EMAIL: !Ref SesSourceEmail
+  GylSubscriberPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylSubscriberPostLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylApi
+          - '/*'
+  GylApiSubscriberPost:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylSubscriberPostPermission
+    Properties:
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSubscriberResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylSubscriberPostLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylSubscriberDeleteLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSubscribersTable
+      - GylQueueTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylSubscriberDeleteLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylSubscribersTable
+                        - Arn
+                      - /index/EmailToStatusIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylQueueTable
+                        - Arn
+                      - /index/SubscriberIdIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt
+                    - GylQueueTable
+                    - Arn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt
+                    - GylSubscribersTable
+                    - Arn
+  GylSubscriberDeleteLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-subscriber-delete-dist.zip
+      Description: Deletes a subscriber
+      FunctionName: GylSubscriberDelete
+      Handler: index.handler
+      Role: !GetAtt
+        - GylSubscriberDeleteLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylSubscriberDeletePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylSubscriberDeleteLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylApi
+          - '/*'
+  GylApiSubscriberDelete:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylSubscriberDeletePermission
+    Properties:
+      HttpMethod: DELETE
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSubscriberResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylSubscriberDeleteLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylApiSubscriberResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !Ref GylApiAdminResource
+      PathPart: subscriber
+  GylApiSubscriberOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSubscriberResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'POST,DELETE,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  ### END GENERATED PART
+
+  # DynamoDB Tables
+  GylSettingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: settingName
+          AttributeType: S
+      TableName: !Sub
+        - '${DbTablePrefix}Settings'
+        - 
+          DbTablePrefix: !Ref DbTablePrefix
+      KeySchema:
+        -
+          AttributeName: settingName
+          KeyType: HASH
+  GylQueueTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}Queue'
+        - 
+          DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        -
+          AttributeName: queuePlacement
+          AttributeType: S
+        -
+          AttributeName: runAtModified
+          AttributeType: S
+        -
+          AttributeName: subscriberId
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: queuePlacement
+          KeyType: HASH
+        -
+          AttributeName: runAtModified
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        -
+          IndexName: SubscriberIdIndex
+          KeySchema:
+            -
+              AttributeName: subscriberId
+              KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+              - tagReason
+            ProjectionType: INCLUDE
+  GylSubscribersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}Subscribers'
+        - 
+          DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        -
+          AttributeName: subscriberId
+          AttributeType: S
+        -
+          AttributeName: email
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: subscriberId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        -
+          IndexName: EmailToStatusIndex
+          KeySchema:
+            -
+              AttributeName: email
+              KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+              - unsubscribed
+              - confirmed
+              - tags
+            ProjectionType: INCLUDE
+Outputs:
+  GylEC2MainHostname:
+    Description: 'EC2 Hostname'
+    Value: !Join
+      - ''
+      - - !GetAtt
+          - GylEC2Main
+          - PublicDnsName
+  GylApiUrl:
+    Description: 'GYL API Url'
+    Value: !Join
+      - ''
+      - - https://
+        -
+          Ref: GylApi
+        - .execute-api.
+        -
+          Ref: AWS::Region
+        - .amazonaws.com/
+  GylApiBetaStage:
+    Description: 'GYL API Stage'
+    Value: !Ref GylApiBetaStage
+

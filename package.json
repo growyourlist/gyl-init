@@ -1,0 +1,25 @@
+{
+  "name": "gyl-init",
+  "description": "Initialises a new version of GrowYourList",
+  "version": "1.0.0",
+  "license": "MIT",
+  "devDependencies": {
+    "archiver": "^3.1.1",
+    "eslint": "^6.8.0"
+  },
+  "scripts": {
+    "setup": "node src/gyl-install",
+    "destruct": "node src/gyl-uninstall",
+    "hash": "node src/hash-key-cli"
+  },
+  "dependencies": {
+    "adm-zip": "^0.4.13",
+    "aws-sdk": "^2.553.0",
+    "bcrypt": "^3.0.7",
+    "dotenv": "^8.2.0",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.8",
+    "rimraf": "^3.0.1",
+    "write-all-for-dynamodb": "^0.0.1"
+  }
+}
