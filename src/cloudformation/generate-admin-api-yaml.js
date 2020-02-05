@@ -263,7 +263,7 @@ const shorthand = {
           'permissions': [
             {
               'actions': [ 'ses:CreateTemplate', 'ses:UpdateTemplate' ],
-              'resources': '*'
+              'resource': '*'
             }
           ]
         },
@@ -278,7 +278,7 @@ const shorthand = {
           'permissions': [
             {
               'actions': [ 'ses:GetTemplate' ],
-              'resources': '*',
+              'resource': '*',
             }
           ]
         },
@@ -293,7 +293,7 @@ const shorthand = {
           'permissions': [
             {
               'actions': [ 'ses:DeleteTemplate' ],
-              'resources': '*',
+              'resource': '*',
             }
           ]
         },
@@ -312,7 +312,7 @@ const shorthand = {
           'permissions': [
             {
               'actions': [ 'ses:ListTemplates' ],
-              'resources': '*',
+              'resource': '*',
             }
           ]
         },
@@ -368,11 +368,14 @@ ${indent}      - Arn
 const generateRoleYaml = (methodName, def) => {
   let yaml = `  ${methodName}LambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
+`
+  if (def['dependsOn'] && def['dependsOn'].length) {
+    yaml += `    DependsOn:
 `;
-  def['dependsOn'].forEach(dep => {
-    yaml += `      - ${dep}\n`
-  })
+    def['dependsOn'].forEach(dep => {
+      yaml += `      - ${dep}\n`
+    })
+  }
   yaml += `    Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -615,7 +618,6 @@ const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
 }
 
 const outputYaml = generateYaml(shorthand)
-writeFileSync('test-output.yaml', outputYaml)
 let newTemplate = ''
 let inGeneratedContent = false;
 let generatedOpenPattern = /### BEGIN GENERATED PART/
@@ -633,4 +635,4 @@ readFileSync(join(__dirname, 'gyl-template.yaml')).toString('utf8').split('\n').
     inGeneratedContent = false
   }
 })
-writeFileSync(join(__dirname, 'gyl-template-new.yaml'), newTemplate);
+writeFileSync(join(__dirname, 'gyl-template-new.yaml'), newTemplate.trimRight() + '\n');

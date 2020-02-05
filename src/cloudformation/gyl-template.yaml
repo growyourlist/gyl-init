@@ -1966,7 +1966,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylTemplatePostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2013,6 +2012,7 @@ Resources:
                 Action:
                   - ses:CreateTemplate
                   - ses:UpdateTemplate
+                Resource: '*'
   GylTemplatePostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2086,7 +2086,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylTemplateGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2132,6 +2131,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - ses:GetTemplate
+                Resource: '*'
   GylTemplateGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2205,7 +2205,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylTemplateDeleteLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2251,6 +2250,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - ses:DeleteTemplate
+                Resource: '*'
   GylTemplateDeleteLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2366,7 +2366,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylTemplatesGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2412,6 +2411,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - ses:ListTemplates
+                Resource: '*'
   GylTemplatesGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2634,10 +2634,3 @@ Outputs:
   GylApiBetaStage:
     Description: 'GYL API Stage'
     Value: !Ref GylApiBetaStage
-
-
-
-
-
-
-
