@@ -2,6 +2,26 @@ const { writeFileSync, readFileSync } = require('fs')
 const { join } = require('path')
 
 const shorthand = {
+  'Analytics': {
+    '_methods': {
+      'GET': {
+        'role': {
+          'dependsOn': ['GylQueueTable'],
+          'permissions': [
+            {
+              'actions': ['dynamodb:Query'],
+              'resourceName': 'GylQueueTable',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-analytics-get-dist.zip',
+          'description': 'Gets email analytics',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' }
+        }
+      }
+    }
+  },
   'Autoresponder': {
     '_methods': {
       'POST': {
@@ -17,12 +37,140 @@ const shorthand = {
         'func': {
           'zipfile': 'gyl-admin-autoresponder-post-dist.zip',
           'description': 'Posts (creates or updates) an autoresponder',
-          'env': {
-            'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-          }
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' }
         }
       },
+      'GET': {
+        'role': {
+          'dependsOn': [ 'GylSettingsTable '],
+          'permissions': [
+            {'actions':['dynamodb:GetItem'],'resourceName': 'GylSettingsTable'}
+          ],
+        },
+        'func': {
+          'zipfile': 'gyl-admin-autoresponder-get-dist.zip',
+          'description': 'Gets an autoresponder',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      },
+      'DELETE': {
+        'role': {
+          'dependsOn': [ 'GylSettingsTable' ],
+          'permissions': [
+            {
+              'actions':['dynamodb:DeleteItem'],
+              'resourceName': 'GylSettingsTable'
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-autoresponder-delete-dist.zip',
+          'description': 'Deletes an autoresponder',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
     },
+  },
+  'Autoresponders': {
+    '_methods': {
+      'GET': {
+        'role': {
+          'dependsOn': [ 'GylSettingsTable '],
+          'permissions': [
+            {'actions':['dynamodb:Scan'],'resourceName': 'GylSettingsTable'}
+          ],
+        },
+        'func': {
+          'zipfile': 'gyl-admin-autoresponders-get-dist.zip',
+          'description': 'Gets a list of autoresponders',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    },
+  },
+  'Broadcast': {
+    '_methods': {
+      'POST': {
+        'role': {
+          'dependsOn': ['GylSettingsTable'],
+          'permissions': [
+            {
+              'actions': ['ses:GetTemplate'],
+              'resource': '*'
+            },
+            {
+              'actions': ['dynamodb:GetItem', 'dynamodb:PutItem'],
+              'resourceName': 'GylSettingsTable',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-broadcast-post-dist.zip',
+          'description': 'Triggers a broadcast',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    }
+  },
+  'Email-History': {
+    '_methods': {
+      'GET': {
+        'role': {
+          'dependsOn': [ 'GylSettingsTable' ],
+          'permissions': [
+            {
+              'actions': [ 'dynamodb:GetItem' ],
+              'resourceName': 'GylSettingsTable',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-emailhistory-get-dist.zip',
+          'description': 'Gets the history of sent emails',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    }
+  },
+  'List': {
+    '_methods': {
+      'POST': {
+        'role': {
+          'dependsOn': [ 'GylSettingsTable' ],
+          'permissions': [
+            {
+              'actions': [ 'dynamodb:UpdateItem', 'dynamodb:GetItem' ],
+              'resourceName': 'GylSettingsTable',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-list-post-dist.zip',
+          'description': 'Posts a info about a new list',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    }
+  },
+  'Lists': {
+    '_methods': {
+      'GET': {
+        'role': {
+          'dependsOn': [ 'GylSettingsTable' ],
+          'permissions': [
+            {
+              'actions': [ 'dynamodb:GetItem' ],
+              'resourceName': 'GylSettingsTable',
+            }
+          ],
+        },
+        'func': {
+          'zipfile': 'gyl-admin-lists-get-dist.zip',
+          'description': 'Posts a info about a new list',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    }
   },
   'Subscriber': {
     '_methods': {
@@ -482,7 +630,7 @@ const generateResourceYaml = (name, parentInfo) => {
     realName = name.substring(parentInfo.name.length)
     resource = `GylApi${parentInfo.name}Resource`
   }
-  let yaml = `  GylApi${name}Resource:
+  let yaml = `  GylApi${name.replace('-', '')}Resource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId:
@@ -585,7 +733,7 @@ const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
       const methodNameShort = `${resourceName}${methodKey.charAt(0)}${
         methodKey.substring(1).toLocaleLowerCase()
       }`
-      const methodName = `Gyl${methodNameShort}`
+      const methodName = `Gyl${methodNameShort.replace('-', '')}`
       yaml += generateRoleYaml(
         methodName,
         resourceDef['_methods'][methodKey]['role'],
@@ -599,7 +747,7 @@ const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
       )
       yaml += generateMethodYaml(
         resourceName,
-        methodNameShort,
+        methodNameShort.replace('-', ''),
         methodKey,
       )
     })
