@@ -21,7 +21,7 @@ const shorthand = {
             'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
           }
         }
-      }
+      },
     },
   },
   'Subscriber': {
@@ -107,9 +107,203 @@ const shorthand = {
             'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
           }
         }
+      },
+    },
+    'Queue': {
+      '_methods': {
+        'GET': {
+          'role': {
+            'dependsOn': [ 'GylSubscribersTable', 'GylQueueTable' ],
+            'permissions': [
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylSubscribersTable',
+                'resourceNameSuffix': '/index/EmailToStatusIndex',
+              },
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylQueueTable',
+                'resourceNameSuffix': '/index/SubscriberIdIndex'
+              },
+              {
+                'actions': [ 'dynamodb:BatchGetItem' ],
+                'resourceName': 'GylQueueTable'
+              },
+            ]
+          },
+          'func': {
+            'zipfile': 'gyl-admin-subscriber-queue-get-dist.zip',
+            'description': 'Gets a subscribers queued items',
+            'env': {
+              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
+            }
+          }
+        },
+      },
+    },
+    'Status': {
+      '_methods': {
+        'GET': {
+          'role': {
+            'dependsOn': [ 'GylSubscribersTable' ],
+            'permissions': [
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylSubscribersTable',
+                'resourceNameSuffix': '/index/EmailToStatusIndex',
+              },
+            ]
+          },
+          'func': {
+            'zipfile': 'gyl-admin-subscriber-status-get-dist.zip',
+            'description': 'Gets the status of a subscriber (subscriberId, email, unsubscribed, confirmed, tags)',
+            'env': {
+              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
+            }
+          }
+        },
+      },
+    },
+    'Tag': {
+      '_methods': {
+        'POST': {
+          'role': {
+            'dependsOn': [ 'GylSubscribersTable' ],
+            'permissions': [
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylSubscribersTable',
+                'resourceNameSuffix': '/index/EmailToStatusIndex'
+              },
+              {
+                'actions': [ 'dynamodb:UpdateItem' ],
+                'resourceName': 'GylSubscribersTable',
+              },
+            ]
+          },
+          'func': {
+            'zipfile': 'gyl-admin-subscriber-tag-post-dist.zip',
+            'description': 'Adds a tag to a subscriber.',
+            'env': {
+              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
+            }
+          }
+        },
+      }
+    },
+    'Untag': {
+      '_methods': {
+        'POST': {
+          'role': {
+            'dependsOn': [ 'GylSubscribersTable' ],
+            'permissions': [
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylSubscribersTable',
+                'resourceNameSuffix': '/index/EmailToStatusIndex'
+              },
+              {
+                'actions': [ 'dynamodb:UpdateItem' ],
+                'resourceName': 'GylSubscribersTable',
+              },
+            ]
+          },
+          'func': {
+            'zipfile': 'gyl-admin-subscriber-untag-post-dist.zip',
+            'description': 'Removes a tag from a subscriber.',
+            'env': {
+              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
+            }
+          }
+        },
+      }
+    },
+    'Unsubscribe': {
+      '_methods': {
+        'POST': {
+          'role': {
+            'dependsOn': [ 'GylSubscribersTable', 'GylQueueTable' ],
+            'permissions': [
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylSubscribersTable',
+                'resourceNameSuffix': '/index/EmailToStatusIndex'
+              },
+              {
+                'actions': [ 'dynamodb:UpdateItem' ],
+                'resourceName': 'GylSubscribersTable',
+              },
+              {
+                'actions': [ 'dynamodb:Query' ],
+                'resourceName': 'GylQueueTable',
+                'resourceNameSuffix': '/index/SubscriberIdIndex'
+              },
+              {
+                'actions': [ 'dynamodb:BatchWriteItem' ],
+                'resourceName': 'GylQueueTable'
+              },
+            ]
+          },
+          'func': {
+            'zipfile': 'gyl-admin-subscriber-unsubscribe-post-dist.zip',
+            'description': 'Unsubscribes a subscriber',
+            'env': {
+              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
+            }
+          }
+        },
       }
     }
   },
+  'Template': {
+    '_methods': {
+      'POST': {
+        'role': {
+          'dependsOn': [],
+          'permissions': [
+            {
+              'actions': [ 'ses:CreateTemplate', 'ses:UpdateTemplate' ],
+              'resources': '*'
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-template-post-dist.zip',
+          'description': 'Posts (creates or updates) an email template.',
+        }
+      },
+      'GET': {
+        'role': {
+          'dependsOn': [],
+          'permissions': [
+            {
+              'actions': [ 'ses:GetTemplate' ],
+              'resources': '*',
+            }
+          ]
+        },
+        'function': {
+          'zipfile': 'gyl-admin-template-get-dist.zip',
+          'description': 'Gets an email template.',
+        }
+      },
+      'DELETE': {
+        'role': {
+          'dependsOn': [],
+          'permissions': [
+            {
+              'actions': [ 'ses:DeleteTemplate' ],
+              'resources': '*',
+            }
+          ]
+        },
+        'function': {
+          'zipfile': 'gyl-admin-template-delete-dist.zip',
+          'description': 'Deletes an email template.',
+        }
+      }
+    }
+  }
 }
 
 const generatePermissionActionYaml = (action, indentSize) => {
@@ -175,6 +369,32 @@ const generateRoleYaml = (methodName, def) => {
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/${methodName}:*'
 `
   def['permissions'].forEach(permission => {
     yaml += generatePermissionYaml(permission)
@@ -233,14 +453,20 @@ const generateLambdaPermissionYaml = methodName => {
   return yaml;
 }
 
-const generateResourceYaml = name => {
+const generateResourceYaml = (name, parentInfo) => {
+  let realName = name
+  let resource = 'GylApiAdminResource'
+  if (parentInfo.name) {
+    realName = name.substring(parentInfo.name.length)
+    resource = `GylApi${parentInfo.name}Resource`
+  }
   let yaml = `  GylApi${name}Resource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId:
         Ref: GylApi
-      ParentId: !Ref GylApiAdminResource
-      PathPart: ${name.toLocaleLowerCase()}
+      ParentId: !Ref ${resource}
+      PathPart: ${realName.toLocaleLowerCase()}
 `
   return yaml;
 }
@@ -328,12 +554,13 @@ const generateMethodYaml = (resourceName, methodName, method) => {
   return yaml;
 }
 
-const generateYaml = def => {
+const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
   let yaml = '';
-  Object.keys(def).forEach(resourceKey => {
+  Object.keys(def).filter(k => k !== '_methods').forEach(resourceKey => {
     const resourceDef = def[resourceKey]
+    const resourceName = `${parentInfo.name}${resourceKey}`
     Object.keys(resourceDef['_methods']).forEach(methodKey => {
-      const methodNameShort = `${resourceKey}${methodKey.charAt(0)}${
+      const methodNameShort = `${resourceName}${methodKey.charAt(0)}${
         methodKey.substring(1).toLocaleLowerCase()
       }`
       const methodName = `Gyl${methodNameShort}`
@@ -349,15 +576,21 @@ const generateYaml = def => {
         methodName
       )
       yaml += generateMethodYaml(
-        resourceKey,
+        resourceName,
         methodNameShort,
         methodKey,
       )
     })
-    yaml += generateResourceYaml(resourceKey)
+    yaml += generateResourceYaml(resourceName, parentInfo)
     yaml += generateOptionsYaml(
-      resourceKey, Object.keys(resourceDef['_methods'])
+      resourceName, Object.keys(resourceDef['_methods'])
     )
+    const subResources = Object.keys(resourceDef).filter(k => k !== '_methods')
+    if (subResources.length) {
+      yaml += generateYaml(resourceDef, {
+        name: resourceKey,
+      })
+    }
   })
   return yaml;
 }
