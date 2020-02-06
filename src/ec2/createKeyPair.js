@@ -26,7 +26,10 @@ const createKeyPair = async () => {
 			}
 			const keyPath = path.resolve(`${KeyName}.pem`)
 			fs.writeFileSync(keyPath, data.KeyMaterial)
-			Logger.info(`Saved key in file: ${keyPath}`)
+			Logger.log(`Saved key in file: ./${KeyName}.pem`)
+			Logger.log(
+				'This key is used when connecting to your GrowYourList EC2 instance'
+			)
 			resolve(data)
 		})
 	);

@@ -24,7 +24,7 @@ const createCloudFormationStack = async params => {
 		ContentType: 'application/x-yaml',
 		Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml'))
 	}).promise()
-	Logger.info(
+	Logger.log(
 		`Creating CloudFormation stack ${StackName}. This process can ` +
 			'take several minutes...'
 	);

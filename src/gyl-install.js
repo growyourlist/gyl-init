@@ -6,12 +6,12 @@ const validateSourceEmail = require('./ses/validateSourceEmail')
 const createKeyPair = require('./ec2/createKeyPair')
 const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions')
 const createCloudFormationStack = require('./cloudformation/createCloudFormationStack')
+const createAdminUI = require('./s3/createAdminUI')
 
 
 // const createUsers = require('./iam/createUsers')
 // const createTables = require('./dynamodb/createTables')
 // const createCloudFunctions = require('./lambda/createCloudFunctions')
-// const createAdminUI = require('./s3/createAdminUI')
 
 const generateAuthKey = async () => {
 	return cryto.randomBytes(24).toString('hex')
@@ -42,6 +42,7 @@ const init = async () => {
 			LambdaBucketName, ApiAuthKeyHash, DbTablePrefix, SesSourceEmail
 		})
 		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`)
+		await createAdminUI();
 
 		// await createAdminUI()
 		// await createUsers()

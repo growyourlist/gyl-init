@@ -6,7 +6,7 @@ const StackName = "GrowYourList";
 
 const deleteCloudFormationStack = async () => {
 	const cloudFormation = new AWS.CloudFormation()
-	Logger.info(`Deleting CloudFormation stack ${StackName}. This process can `
+	Logger.log(`Deleting CloudFormation stack ${StackName}. This process can `
 	+ `take several minutes...`)
 	await cloudFormation.deleteStack({ StackName }).promise()
 	await cloudFormation.waitFor('stackDeleteComplete', { StackName }).promise()

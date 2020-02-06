@@ -7,7 +7,7 @@ const exec = promisify(require('child_process').exec)
 const ensureTempDirExistsSync = require('../common/ensureTempDirExistsSync')
 const ensureLatestRelease = require('../common/ensureLatestRelease')
 const installDependencies = require('../common/installDependencies')
-const generateBucketId = require('../common/geneateBucketId')
+const generateBucketId = require('../common/generateBucketId')
 const Logger = require('../Logger')
 const AWS = require('../getAWS')()
 
@@ -31,9 +31,12 @@ const installAdminUIProjectDependencies = async (tempAdminUIPath) => {
 	return await installDependencies(tempAdminUIPath)
 }
 
-const buildAdminUI = async (tempAdminUIPath) => {
+const buildAdminUI = async (tempAdminUIPath, adminBaseUrl) => {
 	Logger.info(`Building admin UI`)
-	let { stderr } = await exec('yarn run build', { cwd: tempAdminUIPath })
+	let { stderr } = await exec('yarn run build', {
+		cwd: tempAdminUIPath,
+		env: { 'BASE_URL': adminBaseUrl }
+	})
 	if (stderr && stderr.trim()) {
 		throw new Error(`Error building the admin UI: ${stderr}`)
 	}
@@ -93,7 +96,9 @@ const createAdminUI = async () => {
 
 	// Create the Bucket which will contain the GYL Admin UI files
 	const s3 = new AWS.S3()
+	
 	const Bucket = `gyl-admin-ui-${generateBucketId()}`
+	Logger.log('Building and uploading GrowYourList Admin web app')
 	const createBucket = promisify(s3.createBucket).bind(s3)
 	Logger.info(`Creating bucket: ${Bucket}`)
 	const { Location } = await createBucket({ Bucket })
@@ -103,16 +108,15 @@ const createAdminUI = async () => {
 	ensureTempDirExistsSync(tempAdminUIPath)
 	await ensureAdminUIProjectFolderExists(tempAdminUIPath)
 	await installAdminUIProjectDependencies(tempAdminUIPath)
-	await buildAdminUI(tempAdminUIPath)
 	const adminUIVersion = JSON.parse(fs.readFileSync(
 		path.join(tempAdminUIPath, 'package.json')
 	)).version
+	const adminBaseUrl = `${Location.replace(/^http:\/\//, 'https://')}${adminUIVersion}`
+	await buildAdminUI(tempAdminUIPath, adminBaseUrl)
 	await uploadAdminUI(
 		s3, path.join(tempAdminUIPath, 'dist'), adminUIVersion, Bucket
 	)
-	Logger.info(`GYL Admin UI available at: ${
-		Location.replace(/^http:\/\//, 'https://')
-	}${adminUIVersion}/index.html`)
+	Logger.log(`GYL Admin UI available at: ${adminBaseUrl}/index.html`)
 }
 
 module.exports = createAdminUI
