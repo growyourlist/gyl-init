@@ -125,7 +125,7 @@ const shorthand = {
           ]
         },
         'func': {
-          'zipfile': 'gyl-admin-emailhistory-get-dist.zip',
+          'zipfile': 'gyl-admin-email-history-get-dist.zip',
           'description': 'Gets the history of sent emails',
           'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
         }
@@ -168,6 +168,26 @@ const shorthand = {
           'zipfile': 'gyl-admin-lists-get-dist.zip',
           'description': 'Posts a info about a new list',
           'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    }
+  },
+  'Single-Email-Send': {
+    '_methods': {
+      'POST': {
+        'role': {
+          'dependsOn': null,
+          'permissions': [
+            {
+              'actions': [ 'ses:SendEmail' ],
+              'resource': '*',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-single-email-send-post-dist.zip',
+          'description': 'Sends a single email using given text and/or html',
+          'env': { 'SOURCE_EMAIL_ADDRESS': '!Ref SesSourceEmail' },
         }
       }
     }
@@ -403,6 +423,26 @@ const shorthand = {
       }
     }
   },
+  'Subscriber-Count': {
+    '_methods': {
+      'POST': {
+        'role': {
+          'dependsOn': ['GylSettingsTable'],
+          'permissions': [
+            {
+              'actions': ['dynamodb:PutItem'],
+              'resourceName': 'GylSettingsTable',
+            }
+          ]
+        },
+        'func': {
+          'zipfile': 'gyl-admin-subscriber-count-post-dist.zip',
+          'description': 'Triggers a count of subscribers',
+          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
+        }
+      }
+    }
+  },
   'Template': {
     '_methods': {
       'POST': {
@@ -630,7 +670,7 @@ const generateResourceYaml = (name, parentInfo) => {
     realName = name.substring(parentInfo.name.length)
     resource = `GylApi${parentInfo.name}Resource`
   }
-  let yaml = `  GylApi${name.replace('-', '')}Resource:
+  let yaml = `  GylApi${name.replace(/-/g, '')}Resource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId:
@@ -733,7 +773,7 @@ const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
       const methodNameShort = `${resourceName}${methodKey.charAt(0)}${
         methodKey.substring(1).toLocaleLowerCase()
       }`
-      const methodName = `Gyl${methodNameShort.replace('-', '')}`
+      const methodName = `Gyl${methodNameShort.replace(/-/g, '')}`
       yaml += generateRoleYaml(
         methodName,
         resourceDef['_methods'][methodKey]['role'],
@@ -746,14 +786,14 @@ const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
         methodName
       )
       yaml += generateMethodYaml(
-        resourceName,
-        methodNameShort.replace('-', ''),
+        resourceName.replace(/-/g, ''),
+        methodNameShort.replace(/-/g, ''),
         methodKey,
       )
     })
     yaml += generateResourceYaml(resourceName, parentInfo)
     yaml += generateOptionsYaml(
-      resourceName, Object.keys(resourceDef['_methods'])
+      resourceName.replace(/-/g, ''), Object.keys(resourceDef['_methods'])
     )
     const subResources = Object.keys(resourceDef).filter(k => k !== '_methods')
     if (subResources.length) {

@@ -1489,7 +1489,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-emailhistory-get-dist.zip
+        S3Key: gyl-admin-email-history-get-dist.zip
       Description: Gets the history of sent emails
       FunctionName: GylEmailHistoryGet
       Handler: index.handler
@@ -1531,7 +1531,7 @@ Resources:
       ApiKeyRequired: false
       RequestParameters: {}
       ResourceId:
-        Ref: GylApiEmail-HistoryResource
+        Ref: GylApiEmailHistoryResource
       RestApiId:
         Ref: GylApi
       MethodResponses:
@@ -1565,7 +1565,7 @@ Resources:
         Ref: GylApi
       ParentId: !Ref GylApiAdminResource
       PathPart: email-history
-  GylApiEmail-HistoryOptions:
+  GylApiEmailHistoryOptions:
     Type: AWS::ApiGateway::Method
     DependsOn:
       - GylApiEmptyModel
@@ -1575,7 +1575,7 @@ Resources:
       ApiKeyRequired: false
       RequestParameters: {}
       ResourceId:
-        Ref: GylApiEmail-HistoryResource
+        Ref: GylApiEmailHistoryResource
       RestApiId:
         Ref: GylApi
       MethodResponses:
@@ -1938,6 +1938,170 @@ Resources:
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
               method.response.header.Access-Control-Allow-Methods: >-
                 'GET,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylSingleEmailSendPostLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylSingleEmailSendPostLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylSingleEmailSendPost:*'
+              -
+                Effect: Allow
+                Action:
+                  - ses:SendEmail
+                Resource: '*'
+  GylSingleEmailSendPostLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-single-email-send-post-dist.zip
+      Description: Sends a single email using given text and/or html
+      FunctionName: GylSingleEmailSendPost
+      Handler: index.handler
+      Role: !GetAtt
+        - GylSingleEmailSendPostLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          SOURCE_EMAIL_ADDRESS: !Ref SesSourceEmail
+  GylSingleEmailSendPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylSingleEmailSendPostLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylApi
+          - '/*'
+  GylApiSingleEmailSendPost:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylSingleEmailSendPostPermission
+    Properties:
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSingleEmailSendResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylSingleEmailSendPostLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylApiSingleEmailSendResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !Ref GylApiAdminResource
+      PathPart: single-email-send
+  GylApiSingleEmailSendOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSingleEmailSendResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'POST,OPTIONS'
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylSubscriberPostLambdaRole:
     Type: AWS::IAM::Role
@@ -3215,6 +3379,175 @@ Resources:
       RequestParameters: {}
       ResourceId:
         Ref: GylApiSubscriberUnsubscribeResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'POST,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylSubscriberCountPostLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSettingsTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylSubscriberCountPostLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylSubscriberCountPost:*'
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource:
+                  - !GetAtt
+                    - GylSettingsTable
+                    - Arn
+  GylSubscriberCountPostLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-subscriber-count-post-dist.zip
+      Description: Triggers a count of subscribers
+      FunctionName: GylSubscriberCountPost
+      Handler: index.handler
+      Role: !GetAtt
+        - GylSubscriberCountPostLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylSubscriberCountPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylSubscriberCountPostLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylApi
+          - '/*'
+  GylApiSubscriberCountPost:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylSubscriberCountPostPermission
+    Properties:
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSubscriberCountResource
+      RestApiId:
+        Ref: GylApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylSubscriberCountPostLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylApiSubscriberCountResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylApi
+      ParentId: !Ref GylApiAdminResource
+      PathPart: subscriber-count
+  GylApiSubscriberCountOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylApiSubscriberCountResource
       RestApiId:
         Ref: GylApi
       MethodResponses:
