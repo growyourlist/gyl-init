@@ -23,4 +23,4 @@ const uninstall = async () => {
   }
 };
 
-uninstall();
+module.exports = uninstall;
