@@ -9,90 +9,91 @@ const ensureLatestRelease = require('../common/ensureLatestRelease')
 const installDependencies = require('../common/installDependencies')
 const generateBucketId = require('../common/generateBucketId')
 const Logger = require('../Logger')
-const AWS = require('../getAWS')()
-
-const contentTypes = [
-	{ ext: /\.css$/i, type: 'text/css; charset=UTF-8' },
-	{ ext: /\.js$/i, type: 'application/javascript' },
-	{ ext: /\.html$/i, type: 'text/html; charset=UTF-8' },
-	{ ext: /\.map$/i, type: 'application/json' },
-]
-
-const getContentType = filepath => {
-	for (let i = 0; i < contentTypes.length; i++) {
-		if (contentTypes[i].ext.test(filepath)) {
-			return contentTypes[i].type
-		}
-	}
-	return 'text/plain'
-}
-
-const installAdminUIProjectDependencies = async (tempAdminUIPath) => {
-	return await installDependencies(tempAdminUIPath)
-}
-
-const buildAdminUI = async (tempAdminUIPath, adminBaseUrl) => {
-	Logger.info(`Building admin UI`)
-	let { stderr } = await exec('yarn run build', {
-		cwd: tempAdminUIPath,
-		env: { 'BASE_URL': adminBaseUrl }
-	})
-	if (stderr && stderr.trim()) {
-		throw new Error(`Error building the admin UI: ${stderr}`)
-	}
-}
-
-const uploadFile = async (
-	putObject, filePath, distFolder, adminUIVersion, Bucket, ACL
-) => {
-	const Key = `${adminUIVersion}${filePath.substring(
-		distFolder.length
-	)}`.replace(/\\/g, '/')
-	const ContentType = getContentType(Key)
-	const Body = fs.readFileSync(filePath)
-	return await putObject({
-		ACL,
-		Bucket,
-		Key,
-		ContentType,
-		Body,
-	})
-}
-
-const uploadAdminUI = async (s3, distFolder, adminUIVersion, Bucket) => {
-
-	// Get all the files that need to be uploaded.
-	const files = []
-	const addPaths = dirPath => {
-		const items = fs.readdirSync(dirPath, { withFileTypes: true })
-		items.forEach(item => {
-			const fullItemPath = path.join(dirPath, item.name)
-			if (item.isDirectory()) {
-				addPaths(fullItemPath)
-				return
-			}
-			files.push(fullItemPath)
-		})
-	}
-	addPaths(distFolder)
-
-	// Upload all the files.
-	Logger.info(`Uploading admin UI files`)
-	const putObject = promisify(s3.putObject).bind(s3)
-	const ACL = 'public-read'
-	await Promise.all(files.map(filePath => uploadFile(
-		putObject, filePath, distFolder, adminUIVersion, Bucket, ACL
-	)))
-}
-
-const ensureAdminUIProjectFolderExists = async (tempAdminUIPath) => {
-	return await ensureLatestRelease(
-		tempAdminUIPath,
-		'https://api.github.com/repos/growyourlist/gyl-admin-ui/releases',
-	)
-}
+const getAWS = require('../getAWS')
 
 const createAdminUI = async () => {
+	const AWS = getAWS();
+
+	const contentTypes = [
+		{ ext: /\.css$/i, type: 'text/css; charset=UTF-8' },
+		{ ext: /\.js$/i, type: 'application/javascript' },
+		{ ext: /\.html$/i, type: 'text/html; charset=UTF-8' },
+		{ ext: /\.map$/i, type: 'application/json' },
+	]
+	
+	const getContentType = filepath => {
+		for (let i = 0; i < contentTypes.length; i++) {
+			if (contentTypes[i].ext.test(filepath)) {
+				return contentTypes[i].type
+			}
+		}
+		return 'text/plain'
+	}
+	
+	const installAdminUIProjectDependencies = async (tempAdminUIPath) => {
+		return await installDependencies(tempAdminUIPath)
+	}
+	
+	const buildAdminUI = async (tempAdminUIPath, adminBaseUrl) => {
+		Logger.info(`Building admin UI`)
+		let { stderr } = await exec('yarn run build', {
+			cwd: tempAdminUIPath,
+			env: { 'BASE_URL': adminBaseUrl }
+		})
+		if (stderr && stderr.trim()) {
+			throw new Error(`Error building the admin UI: ${stderr}`)
+		}
+	}
+	
+	const uploadFile = async (
+		putObject, filePath, distFolder, adminUIVersion, Bucket, ACL
+	) => {
+		const Key = `${adminUIVersion}${filePath.substring(
+			distFolder.length
+		)}`.replace(/\\/g, '/')
+		const ContentType = getContentType(Key)
+		const Body = fs.readFileSync(filePath)
+		return await putObject({
+			ACL,
+			Bucket,
+			Key,
+			ContentType,
+			Body,
+		})
+	}
+	
+	const uploadAdminUI = async (s3, distFolder, adminUIVersion, Bucket) => {
+	
+		// Get all the files that need to be uploaded.
+		const files = []
+		const addPaths = dirPath => {
+			const items = fs.readdirSync(dirPath, { withFileTypes: true })
+			items.forEach(item => {
+				const fullItemPath = path.join(dirPath, item.name)
+				if (item.isDirectory()) {
+					addPaths(fullItemPath)
+					return
+				}
+				files.push(fullItemPath)
+			})
+		}
+		addPaths(distFolder)
+	
+		// Upload all the files.
+		Logger.info(`Uploading admin UI files`)
+		const putObject = promisify(s3.putObject).bind(s3)
+		const ACL = 'public-read'
+		await Promise.all(files.map(filePath => uploadFile(
+			putObject, filePath, distFolder, adminUIVersion, Bucket, ACL
+		)))
+	}
+	
+	const ensureAdminUIProjectFolderExists = async (tempAdminUIPath) => {
+		return await ensureLatestRelease(
+			tempAdminUIPath,
+			'https://api.github.com/repos/growyourlist/gyl-admin-ui/releases',
+		)
+	}
 
 	// Create the Bucket which will contain the GYL Admin UI files
 	const s3 = new AWS.S3()

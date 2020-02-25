@@ -1,21 +1,20 @@
-require('dotenv').config()
-const cryto = require('crypto')
-const bcrypt = require('bcrypt')
-const Logger = require('./Logger')
-const validateSourceEmail = require('./ses/validateSourceEmail')
-const createKeyPair = require('./ec2/createKeyPair')
-const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions')
-const createCloudFormationStack = require('./cloudformation/createCloudFormationStack')
-const createAdminUI = require('./s3/createAdminUI')
+const loadConfig = require('./loadConfig');
+const cryto = require('crypto');
+const bcrypt = require('bcrypt');
+const Logger = require('./Logger');
+const validateSourceEmail = require('./ses/validateSourceEmail');
+const getAdminEmail = require('./ses/getAdminEmail');
+const setSesEventDestinations = require('./ses/setSesEventDestinations');
+const createKeyPair = require('./ec2/createKeyPair');
+const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions');
+const createCloudFormationStack = require('./cloudformation/createCloudFormationStack');
+const populateDb = require('./dynamodb/populateDb');
 
-
-// const createUsers = require('./iam/createUsers')
-// const createTables = require('./dynamodb/createTables')
-// const createCloudFunctions = require('./lambda/createCloudFunctions')
+const createUsers = require('./iam/createUsers');
 
 const generateAuthKey = async () => {
-	return cryto.randomBytes(24).toString('hex')
-}
+	return cryto.randomBytes(24).toString('hex');
+};
 
 const generateTablePrefix = async () => {
 	// Maybe do random prefixes?
@@ -25,33 +24,50 @@ const generateTablePrefix = async () => {
 	// ])
 	// randomArray[0] = randomArray[0].toLocaleUpperCase()
 	// return `Gyl_${randomArray.join('')}_`
-	return `Gyl_`
-}
+	return `Gyl_`;
+};
 
-const hash = async input => await bcrypt.hash(input, 10)
+const hash = async input => await bcrypt.hash(input, 10);
 
 const init = async () => {
 	try {
-		await createKeyPair()
-		const SesSourceEmail = await validateSourceEmail()
-		const ApiAuthKey = await generateAuthKey()
-		const ApiAuthKeyHash = await hash(ApiAuthKey)
-		const LambdaBucketName = await uploadLambdaFunctions()
-		const DbTablePrefix = await generateTablePrefix()
-		await createCloudFormationStack({
-			LambdaBucketName, ApiAuthKeyHash, DbTablePrefix, SesSourceEmail
-		})
-		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`)
-		await createAdminUI();
-
-		// await createAdminUI()
-		// await createUsers()
-		// await createTables()
-		// await createCloudFunctions()
+		console.log('\n### WELCOME TO GROW YOUR LIST (GYL) ###\n\n' +
+		'This program will take you through the process of getting set up. ' +
+		'It can take some time and requires some details from you.')
+		if (!process.env.AWS_ACCESS_KEY_ID) {
+			console.log('You will need an access key for an admin user, see: '
+			+ 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html')
+		}
+		await loadConfig();
+		const SesSourceEmail = await validateSourceEmail();
+		const AdminEmail = await getAdminEmail();
+		console.log('\n## Uploading GYL Software ##\n' +
+			'Thanks for entering the details, GYL will now be uploaded to your AWS ' +
+			'account. This can take some time.\n');
+		const DbTablePrefix = await generateTablePrefix();
+		const users = await createUsers(DbTablePrefix);
+		await createKeyPair();
+		const ApiAuthKey = await generateAuthKey();
+		const ApiAuthKeyHash = await hash(ApiAuthKey);
+		const LambdaBucketName = await uploadLambdaFunctions();
+		const outputs = await createCloudFormationStack({
+			LambdaBucketName,
+			ApiAuthKeyHash,
+			DbTablePrefix,
+			SesSourceEmail,
+			QueueUser: users.GylQueueUser,
+			BroadcastUser: users.GylBroadcastUser,
+			AdminEmail,
+		});
+		// Ses EventDestinations cannot be created in CloudFormation, so they're
+		// done separately here.
+		console.log(outputs);
+		await setSesEventDestinations(outputs);
+		await populateDb(DbTablePrefix, SesSourceEmail);
+		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`);
+	} catch (err) {
+		console.error(err);
 	}
-	catch (err) {
-		console.error(err)
-	}
-}
+};
 
-init()
+init();

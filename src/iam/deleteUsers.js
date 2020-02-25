@@ -1,59 +1,91 @@
-const promisify = require('util').promisify
-const AWS = require('../getAWS')()
-const Logger = require('../Logger')
+const getAWS = require('../getAWS');
+const Logger = require('../Logger');
 
 const deleteUsers = async () => {
-	const iam = new AWS.IAM()
-	const deleteLoginProfile = promisify(iam.deleteLoginProfile).bind(iam)
-	const listAccessKeys = promisify(iam.listAccessKeys).bind(iam)
-	const deleteAccessKey = promisify(iam.deleteAccessKey).bind(iam)
-	const listAttachedUserPolicies = promisify(iam.listAttachedUserPolicies).bind(iam)
-	const detachUserPolicy = promisify(iam.detachUserPolicy).bind(iam)
-	const deletePolicy = promisify(iam.deletePolicy).bind(iam)
-	const deleteUser = promisify(iam.deleteUser).bind(iam)
+	const AWS = getAWS();
+	const iam = new AWS.IAM();
 
-	const UserName = 'gylQueueUser'
-
-	// Delete any log in details
-	Logger.info(`Deleting login profile: ${UserName}`)
-	try {
-		await deleteLoginProfile({ UserName })
-	}
-	catch (err) {
-		// Ignore errors if the profile does not exist.
-		if (err.code !== 'NoSuchEntity') {
-			throw err
+	const deleteUser = async UserName => {
+		let policiesResponse;
+		try {
+			// Delete any log in details
+			Logger.info(`Deleting login profile: ${UserName}`);
+			await iam.deleteLoginProfile({ UserName }).promise();
+		} catch (err) {
+			// Ignore errors if the profile does not exist.
+			if (err.code !== 'NoSuchEntity') {
+				throw err;
+			}
+			Logger.info(`Note: No login profile found for: ${UserName}`);
 		}
-		Logger.info(`Note: No login profile found for: ${UserName}`)
-	}
 
-	// Delete all access keys for the user
-	Logger.info(`Deleting access keys: ${UserName}`)
-	const keysResponse = await listAccessKeys({ UserName })
-	await Promise.all(keysResponse.AccessKeyMetadata.map(async (keyData) => {
-		const { AccessKeyId } = keyData
-		await deleteAccessKey({ UserName, AccessKeyId })
-	}))
+		try {
+			// Delete all access keys for the user
+			Logger.info(`Deleting access keys: ${UserName}`);
+			const keysResponse = await iam.listAccessKeys({ UserName }).promise();
+			await Promise.all(
+				keysResponse.AccessKeyMetadata.map(async keyData => {
+					const { AccessKeyId } = keyData;
+					await iam.deleteAccessKey({ UserName, AccessKeyId }).promise();
+				})
+			);
+		} catch (err) {
+			// Ignore errors if the profile does not exist.
+			if (err.code !== 'NoSuchEntity') {
+				throw err;
+			}
+			Logger.info(`Note: No login profile found for: ${UserName}`);
+		}
 
-	// Detach user policies
-	Logger.info(`Detaching user policies: ${UserName}`)
-	const policiesResponse = await listAttachedUserPolicies({ UserName })
-	await Promise.all(policiesResponse.AttachedPolicies.map(async (policy) => {
-		const { PolicyArn } = policy
-		await detachUserPolicy({ UserName, PolicyArn })
-	}))
+		try {
+			// Detach user policies
+			Logger.info(`Detaching user policies: ${UserName}`);
+			policiesResponse = await iam
+				.listAttachedUserPolicies({ UserName })
+				.promise();
+			await Promise.all(
+				policiesResponse.AttachedPolicies.map(async policy => {
+					const { PolicyArn } = policy;
+					await iam.detachUserPolicy({ UserName, PolicyArn }).promise();
+				})
+			);
+		} catch (err) {
+			// Ignore errors if the profile does not exist.
+			if (err.code !== 'NoSuchEntity') {
+				throw err;
+			}
+			Logger.info(`Note: No login profile found for: ${UserName}`);
+		}
 
+		try {
+			// Delete the user
+			Logger.info(`Deleting user: ${UserName}`);
+			await iam.deleteUser({ UserName }).promise();
+		} catch (err) {
+			// Ignore errors if the profile does not exist.
+			if (err.code !== 'NoSuchEntity') {
+				throw err;
+			}
+			Logger.info(`Note: No login profile found for: ${UserName}`);
+		}
 
-	// Delete the user
-	Logger.info(`Deleting user: ${UserName}`)
-	await deleteUser({ UserName })
+		// Delete the policies
+		await Promise.all(
+			policiesResponse.AttachedPolicies.map(async policy => {
+				const { PolicyArn, PolicyName } = policy;
+				Logger.info(`Deleting policy: ${PolicyName}`);
+				try {
+					await iam.deletePolicy({ PolicyArn }).promise();
+				} catch (err) {
+					console.error(err);
+				}
+			})
+		);
+	};
 
-	// Delete the policies
-	await Promise.all(policiesResponse.AttachedPolicies.map(async (policy) => {
-		const { PolicyArn, PolicyName } = policy
-		Logger.info(`Deleting policy: ${PolicyName}`)
-		await deletePolicy({ PolicyArn })
-	}))
-}
+	Logger.log('Removing GYL users...');
+	await deleteUser('GylQueueUser');
+	await deleteUser('GylBroadcastUser');
+};
 
-module.exports = deleteUsers
+module.exports = deleteUsers;

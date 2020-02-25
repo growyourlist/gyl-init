@@ -1,8 +1,10 @@
 const readline = require('readline');
-const AWS = require('../getAWS')();
-const ses = new AWS.SES();
+const getAWS = require('../getAWS');
 
 const removeSourceEmail = async () => {
+	const AWS = getAWS();
+	const ses = new AWS.SES();
+
 	const rl = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout,

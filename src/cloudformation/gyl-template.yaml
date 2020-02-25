@@ -17,6 +17,22 @@ Parameters:
   SesSourceEmail:
     Description: Source email used by SES
     Type: String
+  AdminEmail:
+    Description: Email to receive errors and other GYL operating information
+    Type: String
+  QueueUserAccessKeyId:
+    Description: The id of the access key used by GYL Queue system
+    Type: String
+  QueueUserSecretAccessKey:
+    Description: The secret access key used by GYL Queue system
+    Type: String
+  BroadcastUserAccessKeyId:
+    Description: The id of the access key used by GYL Broadcast system
+    Type: String
+  BroadcastUserSecretAccessKey:
+    Description: The secret access key used by GYL Broadcast system
+    Type: String
+
 Mappings:
   RegionMap:
     us-east-1:
@@ -47,8 +63,8 @@ Mappings:
       AMI: ami-0b8b10b5bf11f3a22
     ap-southeast-1:
       AMI: ami-05c64f7b4062b0a21
-Resources:
 
+Resources:
   # EC2
   GylEC2Main:
     Type: 'AWS::EC2::Instance'
@@ -88,27 +104,180 @@ Resources:
             - installGylDependencies
         installGylDependencies:
           files:
+            '/tmp/gyl-queue.env':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: !Sub
+                - |
+                  SOURCE_EMAIL=${SourceEmail}
+                  FALLBACK_SOURCE_EMAIL=${FallbackSourceEmail}
+                  UNSUBSCRIBE_LINK_TEMPLATE=${UnsubscribeLinkTemplate}
+                  DB_TABLE_PREFIX="${DbPrefix}"
+                  AWS_REGION="${AwsRegion}"
+                  AWS_ACCESS_KEY_ID=${AwsAccessKeyId}
+                  AWS_SECRET_ACCESS_KEY=${AwsSecretAccessKey}
+
+                -
+                  SourceEmail: !Ref SesSourceEmail
+                  FallbackSourceEmail: !Ref SesSourceEmail
+                  UnsubscribeLinkTemplate: 'test'
+                  DbPrefix: !Ref DbTablePrefix
+                  AwsRegion: !Ref AWS::Region
+                  AwsAccessKeyId: !Ref QueueUserAccessKeyId
+                  AwsSecretAccessKey: !Ref QueueUserSecretAccessKey
+
+            '/tmp/gyl-broadcaster.env':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: !Sub
+                - |
+                  DB_TABLE_PREFIX="${DbPrefix}"
+                  AWS_REGION="${AwsRegion}"
+                  AWS_ACCESS_KEY_ID=${AwsAccessKeyId}
+                  AWS_SECRET_ACCESS_KEY=${AwsSecretAccessKey}
+
+                - 
+                  DbPrefix: !Ref DbTablePrefix
+                  AwsRegion: !Ref AWS::Region
+                  AwsAccessKeyId: !Ref BroadcastUserAccessKeyId
+                  AwsSecretAccessKey: !Ref BroadcastUserSecretAccessKey
+
+            '/etc/systemd/system/gyl-queue.service':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: |
+                [Unit]
+                Description=Grow Your List Queue Service
+
+                [Service]
+                ExecStart=/usr/bin/node src/gyl-queue.js
+                WorkingDirectory=/var/growyourlist/gyl-queue
+                Restart=always
+                SyslogIdentifier=GYL-Queue
+                User=ec2-user
+                Group=ec2-user
+                Environment=PATH=/usr/bin:/usr/local/bin
+                Environment=NODE_ENV=production
+
+                [Install]
+                WantedBy=multi-user.target
+
+            '/etc/systemd/system/gyl-broadcaster.service':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: |
+                [Unit]
+                Description=Grow Your List Broadcaster Service
+
+                [Service]
+                ExecStart=/usr/bin/node src/gyl-check-for-broadcaster-trigger.js
+                WorkingDirectory=/var/growyourlist/gyl-broadcaster
+                Restart=always
+                SyslogIdentifier=GYL-Broadcaster
+                User=ec2-user
+                Group=ec2-user
+                Environment=PATH=/usr/bin:/usr/local/bin
+                Environment=NODE_ENV=production
+
+                [Install]
+                WantedBy=multi-user.target
+
+            '/etc/systemd/system/gyl-subscriber-count.service':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: |
+                [Unit]
+                Description=Grow Your List Subscriber Count Service
+
+                [Service]
+                ExecStart=/usr/bin/node src/gyl-check-for-subscriber-count-trigger.js
+                WorkingDirectory=/var/growyourlist/gyl-broadcaster
+                Restart=always
+                SyslogIdentifier=GYL-Subscriber-Count
+                User=ec2-user
+                Group=ec2-user
+                Environment=PATH=/usr/bin:/usr/local/bin
+                Environment=NODE_ENV=production
+
+                [Install]
+                WantedBy=multi-user.target
+
             '/tmp/gyl-install-dependencies.sh':
               encoding: plain
               mode: '000644'
               owner: root
               group: root
-              content: !Join
-                - '\n'
-                - - '#!/bin/bash'
-                  - '# Install Node and Yarn'
-                  - >-
-                    curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
-                  - 'sudo yum install -y nodejs'
-                  - 'sudo yum install -y gcc-c++ make'
-                  - >-
-                    curl -sL https://dl.yarnpkg.com/rpm/yarn.repo |
-                    sudo tee /etc/yum.repos.d/yarn.repo
-                  - 'sudo yum install -y yarn'
-                  - ''
+              content: |
+                #!/bin/bash
+                # Update packages
+                sudo yum update -y
+
+                # Install Node
+                curl -sL https://rpm.nodesource.com/setup_12.x | sudo bash -
+                sudo yum install -y nodejs
+                sudo yum install -y gcc-c++ make
+
+                # Install Yarn
+                curl -sL https://dl.yarnpkg.com/rpm/yarn.repo | sudo tee /etc/yum.repos.d/yarn.repo
+                sudo yum install -y yarn
+
+                # Install Git
+                sudo yum install -y git
+
+                # Install GYL Queue
+                mkdir /var/growyourlist
+                git clone https://github.com/growyourlist/gyl-queue /var/growyourlist/gyl-queue
+                cd /var/growyourlist/gyl-queue
+                yarn install -y
+
+                # Install GYL Broadcaster
+                git clone https://github.com/growyourlist/gyl-broadcaster /var/growyourlist/gyl-broadcaster
+                cd /var/growyourlist/gyl-broadcaster
+                yarn install -y
+
+            '/tmp/gyl-mv-env-files.sh':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: |
+                #!/bin/bash
+                touch /tmp/attempted-mv
+                mv /tmp/gyl-queue.env /var/growyourlist/gyl-queue/.env
+                mv /tmp/gyl-broadcaster.env /var/growyourlist/gyl-broadcaster/.env
+
+            '/tmp/gyl-enable-services.sh':
+              encoding: plain
+              mode: '000644'
+              owner: root
+              group: root
+              content: |
+                #!/bin/bash
+                systemctl enable gyl-queue
+                systemctl enable gyl-broadcaster
+                systemctl enable gyl-subscriber-count
+                systemctl start gyl-queue
+                systemctl start gyl-broadcaster
+                systemctl start gyl-subscriber-count
+
           commands:
             runGyl001:
               command: 'sh /tmp/gyl-install-dependencies.sh'
+            runGyl002:
+              command: 'sh /tmp/gyl-mv-env-files.sh'
+            runGyl003:
+              command: 'sh /tmp/gyl-enable-services.sh'
+
   GylEC2MainSecurityGroup:
       Type: AWS::EC2::SecurityGroup
       Properties:
@@ -240,8 +409,28 @@ Resources:
     DependsOn:
       - GylApiPingGet
       - GylApiAuthPingGet
+      - GylApiAutoresponderGet
+      - GylApiAnalyticsGet
+      - GylApiAutoresponderPost
+      - GylApiAutoresponderDelete
+      - GylApiAutorespondersGet
+      - GylApiBroadcastPost
+      - GylApiEmailHistoryGet
+      - GylApiListPost
+      - GylApiListsGet
+      - GylApiSingleEmailSendPost
       - GylApiSubscriberPost
       - GylApiSubscriberDelete
+      - GylApiSubscriberQueueGet
+      - GylApiSubscriberStatusGet
+      - GylApiSubscriberTagPost
+      - GylApiSubscriberUntagPost
+      - GylApiSubscriberUnsubscribePost
+      - GylApiSubscriberCountPost
+      - GylApiTemplatePost
+      - GylApiTemplateGet
+      - GylApiTemplateDelete
+      - GylApiTemplatesGet
     Properties:
       RestApiId:
         Ref: GylApi
@@ -4135,6 +4324,162 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   ### END GENERATED PART
 
+  # SNS Lambda Functions
+  GylReactToInteractionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylReactToInteractionLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylSubscribersTable
+                        - Arn
+                      - /index/EmailToStatusIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt
+                  - GylSubscribersTable
+                  - Arn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt
+                  - GylQueueTable
+                  - Arn
+  GylReactToInteractionLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-react-to-interaction-dist.zip
+      Description: Lambda function to react to interactions with emails.
+      FunctionName: GylReactToInteraction
+      Handler: index.handler
+      Role: !GetAtt
+        - GylReactToInteractionLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylReactToInteractionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylReactToInteractionLambda
+        - Arn
+      Principal: sns.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:sns:'
+          -
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          - GylOpenAndClickTopic
+
+  GylReactToUnsubscribeEventLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylReactToUnsubscribeEventLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylSubscribersTable
+                        - Arn
+                      - /index/EmailToStatusIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt
+                  - GylSubscribersTable
+                  - Arn
+              - 
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:BatchWriteItem
+                Resource: !GetAtt
+                  - GylQueueTable
+                  - Arn
+  GylReactToUnsubscribeEventLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-react-to-unsubscribe-event-dist.zip
+      Description: Lambda function to react to unsubscribe events.
+      FunctionName: GylReactToUnsubscribeEventLambda
+      Handler: index.handler
+      Role: !GetAtt
+        - GylReactToUnsubscribeEventLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylReactToUnsubscribeEventPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylReactToUnsubscribeEventLambda
+        - Arn
+      Principal: sns.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:sns:'
+          -
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          - GylUnsubscribeEventTopic
+
   # DynamoDB Tables
   GylSettingsTable:
     Type: AWS::DynamoDB::Table
@@ -4220,6 +4565,43 @@ Resources:
               - confirmed
               - tags
             ProjectionType: INCLUDE
+
+  # SNS
+  GylOpenAndClickTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        -
+          Endpoint: !GetAtt
+            - GylReactToInteractionLambda
+            - Arn
+          Protocol: lambda
+      TopicName: GylOpenAndClickTopic
+  GylUnsubscribeEventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        -
+          Endpoint: !GetAtt
+            - GylReactToUnsubscribeEventLambda
+            - Arn
+          Protocol: lambda
+      TopicName: GylUnsubscribeEventTopic
+  GylSesFailureEventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+        -
+          Endpoint: !Ref AdminEmail
+          Protocol: email
+      TopicName: GylSesFailureEventTopic
+
+  # SES
+  GylSesConfigurationSet:
+    Type: AWS::SES::ConfigurationSet
+    Properties:
+      Name: GylSesConfigurationSet
+
 Outputs:
   GylEC2MainHostname:
     Description: 'EC2 Hostname'
@@ -4242,3 +4624,15 @@ Outputs:
   GylApiBetaStage:
     Description: 'GYL API Stage'
     Value: !Ref GylApiBetaStage
+  GylSesConfigurationSet:
+    Description: GylSesConfigurationSet
+    Value: !Ref GylSesConfigurationSet
+  GylOpenAndClickTopic:
+    Description: GylOpenAndClickTopic
+    Value: !Ref GylOpenAndClickTopic
+  GylUnsubscribeEventTopic:
+    Description: GylUnsubscribeEventTopic
+    Value: !Ref GylUnsubscribeEventTopic
+  GylSesFailureEventTopic:
+    Description: GylSesFailureEventTopic
+    Value: !Ref GylSesFailureEventTopic

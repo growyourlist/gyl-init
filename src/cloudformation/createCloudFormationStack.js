@@ -16,14 +16,19 @@ const createCloudFormationStack = async params => {
 		ApiAuthKeyHash,
 		DbTablePrefix,
 		SesSourceEmail,
+		QueueUser,
+		BroadcastUser,
+		AdminEmail,
 	} = params;
-	Logger.info('Uploading CloudFormation template to bucket')
-	await s3.putObject({
-		Bucket: LambdaBucketName,
-		Key: 'gyl-template.yaml',
-		ContentType: 'application/x-yaml',
-		Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml'))
-	}).promise()
+	Logger.info('Uploading CloudFormation template to bucket');
+	await s3
+		.putObject({
+			Bucket: LambdaBucketName,
+			Key: 'gyl-template.yaml',
+			ContentType: 'application/x-yaml',
+			Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml')),
+		})
+		.promise();
 	Logger.log(
 		`Creating CloudFormation stack ${StackName}. This process can ` +
 			'take several minutes...'
@@ -43,7 +48,24 @@ const createCloudFormationStack = async params => {
 				{ ParameterKey: 'LambdaBucketName', ParameterValue: LambdaBucketName },
 				{ ParameterKey: 'ApiAuthKeyHash', ParameterValue: ApiAuthKeyHash },
 				{ ParameterKey: 'DbTablePrefix', ParameterValue: DbTablePrefix },
+				{ ParameterKey: 'AdminEmail', ParameterValue: AdminEmail },
 				{ ParameterKey: 'SesSourceEmail', ParameterValue: SesSourceEmail },
+				{
+					ParameterKey: 'QueueUserAccessKeyId',
+					ParameterValue: QueueUser.accessKeyId,
+				},
+				{
+					ParameterKey: 'QueueUserSecretAccessKey',
+					ParameterValue: QueueUser.secretAccessKey,
+				},
+				{
+					ParameterKey: 'BroadcastUserAccessKeyId',
+					ParameterValue: BroadcastUser.accessKeyId,
+				},
+				{
+					ParameterKey: 'BroadcastUserSecretAccessKey',
+					ParameterValue: BroadcastUser.secretAccessKey,
+				},
 			],
 			Capabilities: ['CAPABILITY_IAM'],
 		})
@@ -55,10 +77,20 @@ const createCloudFormationStack = async params => {
 			.promise();
 		Logger.info(`CloudFormation stack ${StackName} created`);
 		const stack = stackCreateCompleteResponse.Stacks[0];
+		const outputs = {};
+		const outputKeys = [
+			'GylSesConfigurationSet',
+			'GylOpenAndClickTopic',
+			'GylUnsubscribeEventTopic',
+			'GylSesFailureEventTopic',
+		];
 		for (let i = 0; i < stack.Outputs.length; i++) {
 			const output = stack.Outputs[i];
-			if (output.Description === 'GYL API Stage') {
-				continue; // Skip because it gets joined to the api url
+			if ('GYL API Stage' === output.Description) {
+				continue; // This is used in conjunction with
+			} else if (outputKeys.indexOf(output.Description) >= 0) {
+				// These details are returned as they are used in further processing
+				outputs[output.Description] = output.OutputValue;
 			} else if (output.Description === 'GYL API Url') {
 				Logger.log(
 					`${output.Description}: ${output.OutputValue}${
@@ -79,6 +111,7 @@ const createCloudFormationStack = async params => {
 				Logger.log(`${output.Description}: ${output.OutputValue}`);
 			}
 		}
+		return outputs;
 	} catch (err) {
 		if (err.code === 'ResourceNotReady') {
 			console.error(

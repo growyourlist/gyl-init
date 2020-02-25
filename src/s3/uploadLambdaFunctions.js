@@ -2,6 +2,7 @@ const { readdirSync, existsSync, readFileSync } = require('fs');
 const { join } = require('path');
 const AWS = require('aws-sdk');
 
+const Logger = require('../Logger');
 const ensureLatestRelease = require('../common/ensureLatestRelease');
 const ensureTempDirExistsSync = require('../common/ensureTempDirExistsSync');
 const generateBucketId = require('../common/generateBucketId');
@@ -14,6 +15,7 @@ const ensureCloudProjectFolderExists = async tempCloudDir => {
 };
 
 const uploadLambdaFunctionsToS3 = async () => {
+	Logger.log('Uploading lambda functions...')
 	const tempCloudFuncsDir = join(process.cwd(), 'temp', 'gyl-cloud-functions');
 	ensureTempDirExistsSync(tempCloudFuncsDir);
 	await ensureCloudProjectFolderExists(tempCloudFuncsDir);
