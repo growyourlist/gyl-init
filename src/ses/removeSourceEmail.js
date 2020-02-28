@@ -11,7 +11,7 @@ const removeSourceEmail = async () => {
 	});
 
 	const email = await new Promise((resolve) => {
-		rl.question('Source email to remove (hit "Enter" to skip): ', result => {
+		rl.question('Source email to remove [e.g. test@example.com]: ', result => {
 			rl.close();
 			resolve(result)
 		})

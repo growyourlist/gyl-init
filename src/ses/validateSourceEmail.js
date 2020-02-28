@@ -14,7 +14,7 @@ const validateSourceEmail = async () => {
 		do {
 			email = await new Promise(resolve => {
 				rl.question(
-					"Enter the source email ['c' to cancel setup]: ",
+					"Enter the source email [e.g. test@example.com]: ",
 					result => {
 						resolve(result);
 					}
