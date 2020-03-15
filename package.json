@@ -16,12 +16,12 @@
   "dependencies": {
     "adm-zip": "^0.4.13",
     "aws-sdk": "^2.553.0",
-    "bcrypt": "^3.0.7",
+    "bcrypt": "^4.0.1",
     "dotenv": "^8.2.0",
     "read": "^1.0.7",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.8",
     "rimraf": "^3.0.1",
-    "write-all-for-dynamodb": "^0.0.1"
+    "write-all-for-dynamodb": "^0.0.3"
   }
 }
