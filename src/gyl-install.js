@@ -2,8 +2,9 @@ const loadConfig = require('./loadConfig');
 const cryto = require('crypto');
 const bcrypt = require('bcrypt');
 const Logger = require('./Logger');
-const validateSourceEmail = require('./ses/validateSourceEmail');
+const getSourceEmail = require('./ses/getSourceEmail');
 const getAdminEmail = require('./ses/getAdminEmail');
+const getFooterAddress = require('./ses/getFooterAddress');
 const setSesEventDestinations = require('./ses/setSesEventDestinations');
 const createKeyPair = require('./ec2/createKeyPair');
 const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions');
@@ -39,7 +40,8 @@ const init = async () => {
 			+ 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html')
 		}
 		await loadConfig();
-		const SesSourceEmail = await validateSourceEmail();
+		const SesSourceEmail = await getSourceEmail();
+		const FooterAddress = await getFooterAddress();
 		const AdminEmail = await getAdminEmail();
 		console.log('\n## Uploading GYL Software ##\n' +
 			'Thanks for entering the details, GYL will now be uploaded to your AWS ' +

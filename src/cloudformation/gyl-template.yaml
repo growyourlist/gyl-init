@@ -4561,6 +4561,7 @@ Resources:
               KeyType: HASH
           Projection:
             NonKeyAttributes:
+              - displayEmail
               - unsubscribed
               - confirmed
               - tags
