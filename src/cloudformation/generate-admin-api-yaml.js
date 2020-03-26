@@ -241,6 +241,30 @@ const adminApiShorthand = {
     },
     Subscriber: {
       _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSubscribersTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-subscriber-get-dist.zip',
+            description: 'Gets the full subscriber',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+            }
+          }
+        },
         POST: {
           useAuthorizer: true,
           role: {
@@ -487,6 +511,11 @@ const adminApiShorthand = {
               'GylSubscribersTable',
             ],
             permissions: [
+              {
+                actions: [ 'dynamodb:Query' ],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
               {
                 actions: [ 'dynamodb:BatchWriteItem' ],
                 resourceName: 'GylSubscribersTable',

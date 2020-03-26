@@ -3069,6 +3069,144 @@ Resources:
         Ref: GylAdminApi
       ParentId: !Ref GylAdminApiAdminResource
       PathPart: single-email-send
+  GylAdminSubscriberGetLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSubscribersTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylAdminSubscriberGetLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylAdminSubscriberGet:*'
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylSubscribersTable
+                        - Arn
+                      - /index/EmailToStatusIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt
+                    - GylSubscribersTable
+                    - Arn
+  GylAdminSubscriberGetLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-subscriber-get-dist.zip
+      Description: Gets the full subscriber
+      FunctionName: GylAdminSubscriberGet
+      Handler: index.handler
+      Role: !GetAtt
+        - GylAdminSubscriberGetLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylAdminSubscriberGetPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylAdminSubscriberGetLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylAdminApi
+          - '/*'
+  GylAdminApiAdminSubscriberGet:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminSubscriberGetPermission
+    Properties:
+      HttpMethod: GET
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylAdminApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminSubscriberResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylAdminSubscriberGetLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminSubscriberPostLambdaRole:
     Type: AWS::IAM::Role
     DependsOn:
@@ -3436,7 +3574,7 @@ Resources:
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
               method.response.header.Access-Control-Allow-Methods: >-
-                'POST,DELETE,OPTIONS'
+                'GET,POST,DELETE,OPTIONS'
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminApiAdminSubscriberResource:
     Type: AWS::ApiGateway::Resource
@@ -4369,6 +4507,186 @@ Resources:
         Ref: GylAdminApi
       ParentId: !Ref GylAdminApiAdminSubscriberResource
       PathPart: unsubscribe
+  GylAdminSubscribersPostLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSubscribersTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylAdminSubscribersPostLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylAdminSubscribersPost:*'
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
+                    - - !GetAtt
+                        - GylSubscribersTable
+                        - Arn
+                      - /index/EmailToStatusIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource:
+                  - !GetAtt
+                    - GylSubscribersTable
+                    - Arn
+  GylAdminSubscribersPostLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-subscribers-post-dist.zip
+      Description: Posts multiple subscribers (between 1 and 25 subscribers inclusive)
+      FunctionName: GylAdminSubscribersPost
+      Handler: index.handler
+      Role: !GetAtt
+        - GylAdminSubscribersPostLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylAdminSubscribersPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylAdminSubscribersPostLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylAdminApi
+          - '/*'
+  GylAdminApiAdminSubscribersPost:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminSubscribersPostPermission
+    Properties:
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylAdminApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminSubscribersResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylAdminSubscribersPostLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylAdminApiAdminSubscribersOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminSubscribersResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylAdminApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'POST,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylAdminApiAdminSubscribersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylAdminApi
+      ParentId: !Ref GylAdminApiAdminResource
+      PathPart: subscribers
   GylAdminSubscriberCountPostLambdaRole:
     Type: AWS::IAM::Role
     DependsOn:
@@ -4496,6 +4814,133 @@ Resources:
             StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylAdminSubscriberCountGetLambdaRole:
+    Type: AWS::IAM::Role
+    DependsOn:
+      - GylSettingsTable
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylAdminSubscriberCountGetLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylAdminSubscriberCountGet:*'
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource:
+                  - !GetAtt
+                    - GylSettingsTable
+                    - Arn
+  GylAdminSubscriberCountGetLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-subscriber-count-get-dist.zip
+      Description: Gets the status of the subscriber count
+      FunctionName: GylAdminSubscriberCountGet
+      Handler: index.handler
+      Role: !GetAtt
+        - GylAdminSubscriberCountGetLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
+  GylAdminSubscriberCountGetPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylAdminSubscriberCountGetLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylAdminApi
+          - '/*'
+  GylAdminApiAdminSubscriberCountGet:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminSubscriberCountGetPermission
+    Properties:
+      HttpMethod: GET
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylAdminApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminSubscriberCountResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylAdminSubscriberCountGetLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminApiAdminSubscriberCountOptions:
     Type: AWS::ApiGateway::Method
     DependsOn:
@@ -4529,7 +4974,7 @@ Resources:
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
               method.response.header.Access-Control-Allow-Methods: >-
-                'POST,OPTIONS'
+                'POST,GET,OPTIONS'
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminApiAdminSubscriberCountResource:
     Type: AWS::ApiGateway::Resource
