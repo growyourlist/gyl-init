@@ -73,7 +73,7 @@ const createUsers = async dbTablePrefix => {
 				},
 				{
 					Effect: 'Allow',
-					Action: ['ses:SendTemplatedEmail', 'ses:SendBulkTemplatedEmail'],
+					Action: ['ses:SendTemplatedEmail', 'ses:SendBulkTemplatedEmail', 'ses:SendEmail'],
 					Resource: '*',
 				},
 			],

@@ -76,41 +76,11 @@ const createCloudFormationStack = async params => {
 			.waitFor('stackCreateComplete', { StackName })
 			.promise();
 		Logger.info(`CloudFormation stack ${StackName} created`);
-		const stack = stackCreateCompleteResponse.Stacks[0];
 		const outputs = {};
-		const outputKeys = [
-			'GylSesConfigurationSet',
-			'GylOpenAndClickTopic',
-			'GylUnsubscribeEventTopic',
-			'GylSesFailureEventTopic',
-		];
-		for (let i = 0; i < stack.Outputs.length; i++) {
-			const output = stack.Outputs[i];
-			if ('GYL API Stage' === output.Description) {
-				continue; // This is used in conjunction with
-			} else if (outputKeys.indexOf(output.Description) >= 0) {
-				// These details are returned as they are used in further processing
-				outputs[output.Description] = output.OutputValue;
-			} else if (output.Description === 'GYL API Url') {
-				Logger.log(
-					`${output.Description}: ${output.OutputValue}${
-						(
-							stack.Outputs.find(i => i.Description === 'GYL API Stage') || {
-								OutputValue: '',
-							}
-						).OutputValue
-					}`
-				);
-			} else if (output.Description === 'GYL API Key') {
-				const apiGateway = new AWS.APIGateway();
-				const apiKeyResponse = await apiGateway
-					.getApiKey({ apiKey: output.OutputValue, includeValue: true })
-					.promise();
-				Logger.log(`GYL API Key: ${apiKeyResponse.value}`);
-			} else {
-				Logger.log(`${output.Description}: ${output.OutputValue}`);
-			}
-		}
+		const stack = stackCreateCompleteResponse.Stacks[0];
+		stack.Outputs.forEach((output) => {
+			outputs[output.Description] = output.OutputValue;
+		});
 		return outputs;
 	} catch (err) {
 		if (err.code === 'ResourceNotReady') {

@@ -2,7 +2,7 @@ const loadConfig = require('./loadConfig');
 const cryto = require('crypto');
 const bcrypt = require('bcrypt');
 const Logger = require('./Logger');
-const validateSourceEmail = require('./ses/validateSourceEmail');
+const getSesSourceEmail = require('./ses/getSesSourceEmail');
 const getAdminEmail = require('./ses/getAdminEmail');
 const setSesEventDestinations = require('./ses/setSesEventDestinations');
 const createKeyPair = require('./ec2/createKeyPair');
@@ -39,7 +39,7 @@ const init = async () => {
 			+ 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html')
 		}
 		await loadConfig();
-		const SesSourceEmail = await validateSourceEmail();
+		const SesSourceEmail = await getSesSourceEmail();
 		const AdminEmail = await getAdminEmail();
 		console.log('\n## Uploading GYL Software ##\n' +
 			'Thanks for entering the details, GYL will now be uploaded to your AWS ' +
@@ -61,9 +61,10 @@ const init = async () => {
 		});
 		// Ses EventDestinations cannot be created in CloudFormation, so they're
 		// done separately here.
-		console.log(outputs);
 		await setSesEventDestinations(outputs);
 		await populateDb(DbTablePrefix, SesSourceEmail);
+		Logger.log(`EC2 Hostname: ${outputs['EC2 Hostname']}`);
+		Logger.log(`GYL API URL: ${outputs['GYL API Url']}${outputs['GYL API Stage']}`);
 		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`);
 	} catch (err) {
 		console.error(err);

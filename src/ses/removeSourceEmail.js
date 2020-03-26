@@ -2,6 +2,11 @@ const readline = require('readline');
 const getAWS = require('../getAWS');
 
 const removeSourceEmail = async () => {
+
+	if (process.env.SES_SOURCE_EMAIL) {
+		return process.env.SES_SOURCE_EMAIL;
+	}
+
 	const AWS = getAWS();
 	const ses = new AWS.SES();
 

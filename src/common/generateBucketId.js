@@ -1,7 +1,7 @@
 const { randomBytes } = require('crypto')
 
 const generateBucketId = () => {
-	const bytes = randomBytes(8);
+	const bytes = randomBytes(16);
 	return bytes.toString('hex').toLowerCase();
 }
 

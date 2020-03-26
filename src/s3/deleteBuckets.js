@@ -5,6 +5,11 @@ const deleteAllBucketObjects = require('./deleteAllBucketObjects')
 const deleteBuckets = async (s3, BucketNames) => {
 	for (let i = 0; i < BucketNames.length; i++) {
 		const Bucket = BucketNames[i];
+
+		if (Bucket === process.env.EXISTING_LAMBDA_BUCKET) {
+			continue;
+		}
+
 		Logger.info(`Deleting Bucket: ${Bucket}`);
 		try {
 			const BucketObjects = await getAllBucketObjects(s3, Bucket);

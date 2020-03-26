@@ -70,17 +70,19 @@ const deleteUsers = async () => {
 		}
 
 		// Delete the policies
-		await Promise.all(
-			policiesResponse.AttachedPolicies.map(async policy => {
-				const { PolicyArn, PolicyName } = policy;
-				Logger.info(`Deleting policy: ${PolicyName}`);
-				try {
-					await iam.deletePolicy({ PolicyArn }).promise();
-				} catch (err) {
-					console.error(err);
-				}
-			})
-		);
+		if (policiesResponse && Array.isArray(policiesResponse.AttachedPolicies)) {
+			await Promise.all(
+				policiesResponse.AttachedPolicies.map(async policy => {
+					const { PolicyArn, PolicyName } = policy;
+					Logger.info(`Deleting policy: ${PolicyName}`);
+					try {
+						await iam.deletePolicy({ PolicyArn }).promise();
+					} catch (err) {
+						console.error(err);
+					}
+				})
+			);
+		}
 	};
 
 	Logger.log('Removing GYL users...');

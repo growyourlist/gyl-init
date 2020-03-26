@@ -1,537 +1,741 @@
-const { writeFileSync, readFileSync } = require('fs')
-const { join } = require('path')
+const { writeFileSync, readFileSync } = require('fs');
+const { join } = require('path');
 
-const shorthand = {
-  'Analytics': {
-    '_methods': {
-      'GET': {
-        'role': {
-          'dependsOn': ['GylQueueTable'],
-          'permissions': [
-            {
-              'actions': ['dynamodb:Query'],
-              'resourceName': 'GylQueueTable',
-            }
-          ]
+const adminApiShorthand = {
+  Admin: {
+    Analytics: {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylQueueTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylQueueTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-analytics-get-dist.zip',
+            description: 'Gets email analytics',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
         },
-        'func': {
-          'zipfile': 'gyl-admin-analytics-get-dist.zip',
-          'description': 'Gets email analytics',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' }
-        }
-      }
-    }
-  },
-  'Autoresponder': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable' ],
-          'permissions': [
-            {
-              'actions': [ 'dynamodb:PutItem' ],
-              'resourceName': 'GylSettingsTable',
-            },
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-autoresponder-post-dist.zip',
-          'description': 'Posts (creates or updates) an autoresponder',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' }
-        }
       },
-      'GET': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable '],
-          'permissions': [
-            {'actions':['dynamodb:GetItem'],'resourceName': 'GylSettingsTable'}
-          ],
+    },
+    Autoresponder: {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:PutItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-autoresponder-post-dist.zip',
+            description: 'Posts (creates or updates) an autoresponder',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
         },
-        'func': {
-          'zipfile': 'gyl-admin-autoresponder-get-dist.zip',
-          'description': 'Gets an autoresponder',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable '],
+            permissions: [
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-autoresponder-get-dist.zip',
+            description: 'Gets an autoresponder',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+        DELETE: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:DeleteItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-autoresponder-delete-dist.zip',
+            description: 'Deletes an autoresponder',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
       },
-      'DELETE': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable' ],
-          'permissions': [
-            {
-              'actions':['dynamodb:DeleteItem'],
-              'resourceName': 'GylSettingsTable'
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-autoresponder-delete-dist.zip',
-          'description': 'Deletes an autoresponder',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
     },
-  },
-  'Autoresponders': {
-    '_methods': {
-      'GET': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable '],
-          'permissions': [
-            {'actions':['dynamodb:Scan'],'resourceName': 'GylSettingsTable'}
-          ],
+    Autoresponders: {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable '],
+            permissions: [
+              { actions: ['dynamodb:Scan'], resourceName: 'GylSettingsTable' },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-autoresponders-get-dist.zip',
+            description: 'Gets a list of autoresponders',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
         },
-        'func': {
-          'zipfile': 'gyl-admin-autoresponders-get-dist.zip',
-          'description': 'Gets a list of autoresponders',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
+      },
     },
-  },
-  'Broadcast': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': ['GylSettingsTable'],
-          'permissions': [
-            {
-              'actions': ['ses:GetTemplate'],
-              'resource': '*'
+    Broadcast: {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['ses:GetTemplate'],
+                resource: '*',
+              },
+              {
+                actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-broadcast-post-dist.zip',
+            description: 'Triggers a broadcast',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+      },
+    },
+    'Email-History': {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-email-history-get-dist.zip',
+            description: 'Gets the history of sent emails',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+      },
+    },
+    List: {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:UpdateItem', 'dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-list-post-dist.zip',
+            description: 'Posts a info about a new list',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+        DELETE: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:UpdateItem', 'dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-list-delete-dist.zip',
+            description: 'Deletes info about a list',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+      },
+    },
+    Lists: {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-lists-get-dist.zip',
+            description: 'Posts a info about a new list',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+      },
+    },
+    'Single-Email-Send': {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: null,
+            permissions: [
+              {
+                actions: ['ses:SendEmail'],
+                resource: '*',
+              },
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
+              {
+                actions: ['dynamodb:PutItem', 'dynamodb:GetItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+              {
+                actions: ['dynamodb:PutItem'],
+                resourceName: 'GylQueueTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-single-email-send-post-dist.zip',
+            description: 'Sends a single email using given text and/or html',
+            env: {
+              SOURCE_EMAIL_ADDRESS: '!Ref SesSourceEmail',
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
             },
-            {
-              'actions': ['dynamodb:GetItem', 'dynamodb:PutItem'],
-              'resourceName': 'GylSettingsTable',
-            }
-          ]
+          },
         },
-        'func': {
-          'zipfile': 'gyl-admin-broadcast-post-dist.zip',
-          'description': 'Triggers a broadcast',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
-    }
-  },
-  'Email-History': {
-    '_methods': {
-      'GET': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable' ],
-          'permissions': [
-            {
-              'actions': [ 'dynamodb:GetItem' ],
-              'resourceName': 'GylSettingsTable',
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-email-history-get-dist.zip',
-          'description': 'Gets the history of sent emails',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
-    }
-  },
-  'List': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable' ],
-          'permissions': [
-            {
-              'actions': [ 'dynamodb:UpdateItem', 'dynamodb:GetItem' ],
-              'resourceName': 'GylSettingsTable',
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-list-post-dist.zip',
-          'description': 'Posts a info about a new list',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
-    }
-  },
-  'Lists': {
-    '_methods': {
-      'GET': {
-        'role': {
-          'dependsOn': [ 'GylSettingsTable' ],
-          'permissions': [
-            {
-              'actions': [ 'dynamodb:GetItem' ],
-              'resourceName': 'GylSettingsTable',
-            }
-          ],
-        },
-        'func': {
-          'zipfile': 'gyl-admin-lists-get-dist.zip',
-          'description': 'Posts a info about a new list',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
-    }
-  },
-  'Single-Email-Send': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': null,
-          'permissions': [
-            {
-              'actions': [ 'ses:SendEmail' ],
-              'resource': '*',
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-single-email-send-post-dist.zip',
-          'description': 'Sends a single email using given text and/or html',
-          'env': { 'SOURCE_EMAIL_ADDRESS': '!Ref SesSourceEmail' },
-        }
-      }
-    }
-  },
-  'Subscriber': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': [ 'GylSubscribersTable', 'GylQueueTable', 'GylSettingsTable' ],
-          'permissions': [
-            {
-              'actions': [ 'ses:SendTemplatedEmail' ],
-              'resource': '*',
+      },
+    },
+    Subscriber: {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: [
+              'GylSubscribersTable',
+              'GylQueueTable',
+              'GylSettingsTable',
+            ],
+            permissions: [
+              {
+                actions: ['ses:SendTemplatedEmail'],
+                resource: '*',
+              },
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
+              {
+                actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+              {
+                actions: [
+                  'dynamodb:PutItem',
+                  'dynamodb:BatchGetItem',
+                  'dynamodb:BatchWriteItem',
+                ],
+                resourceName: 'GylQueueTable',
+              },
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylQueueTable',
+                resourceNameSuffix: '/index/SubscriberIdIndex',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-subscriber-post-dist.zip',
+            description:
+              'Posts (create or update if email exists) a subscriber',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+              SOURCE_EMAIL: '!Ref SesSourceEmail',
             },
-            {
-              'actions': [ 'dynamodb:Query' ],
-              'resourceName': 'GylSubscribersTable',
-              'resourceNameSuffix': '/index/EmailToStatusIndex'
+          },
+        },
+        DELETE: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSubscribersTable', 'GylQueueTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylQueueTable',
+                resourceNameSuffix: '/index/SubscriberIdIndex',
+              },
+              {
+                actions: ['dynamodb:BatchWriteItem'],
+                resourceName: 'GylQueueTable',
+              },
+              {
+                actions: ['dynamodb:DeleteItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-subscriber-delete-dist.zip',
+            description: 'Deletes a subscriber',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
             },
-            {
-              'actions': [
-                'dynamodb:GetItem',
-                'dynamodb:PutItem'
+          },
+        },
+      },
+      Queue: {
+        _methods: {
+          GET: {
+            useAuthorizer: true,
+            role: {
+              dependsOn: ['GylSubscribersTable', 'GylQueueTable'],
+              permissions: [
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylSubscribersTable',
+                  resourceNameSuffix: '/index/EmailToStatusIndex',
+                },
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylQueueTable',
+                  resourceNameSuffix: '/index/SubscriberIdIndex',
+                },
+                {
+                  actions: ['dynamodb:BatchGetItem'],
+                  resourceName: 'GylQueueTable',
+                },
               ],
-              'resourceName': 'GylSubscribersTable',
             },
-            {
-              'actions': [
-                'dynamodb:GetItem'
+            func: {
+              zipfile: 'gyl-admin-subscriber-queue-get-dist.zip',
+              description: 'Gets a subscribers queued items',
+              env: {
+                DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+              },
+            },
+          },
+        },
+      },
+      Status: {
+        _methods: {
+          GET: {
+            useAuthorizer: true,
+            role: {
+              dependsOn: ['GylSubscribersTable'],
+              permissions: [
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylSubscribersTable',
+                  resourceNameSuffix: '/index/EmailToStatusIndex',
+                },
               ],
-              'resourceName': 'GylSettingsTable'
             },
-            {
-              'actions': [
-                'dynamodb:PutItem',
-                'dynamodb:BatchGetItem',
-                'dynamodb:BatchWriteItem',
+            func: {
+              zipfile: 'gyl-admin-subscriber-status-get-dist.zip',
+              description:
+                'Gets the status of a subscriber (subscriberId, email, unsubscribed, confirmed, tags)',
+              env: {
+                DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+              },
+            },
+          },
+        },
+      },
+      Tag: {
+        _methods: {
+          POST: {
+            useAuthorizer: true,
+            role: {
+              dependsOn: ['GylSubscribersTable'],
+              permissions: [
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylSubscribersTable',
+                  resourceNameSuffix: '/index/EmailToStatusIndex',
+                },
+                {
+                  actions: ['dynamodb:UpdateItem'],
+                  resourceName: 'GylSubscribersTable',
+                },
               ],
-              'resourceName': 'GylQueueTable'
             },
-            {
-              'actions': [ 'dynamodb:Query' ],
-              'resourceName': 'GylQueueTable',
-              'resourceNameSuffix': '/index/SubscriberIdIndex'
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-subscriber-post-dist.zip',
-          'description': 'Posts (create or update if email exists) a subscriber',
-          'env': {
-            'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-            'SOURCE_EMAIL': '!Ref SesSourceEmail',
-          }
-        }
-      },
-      'DELETE': {
-        'role': {
-          'dependsOn': [ 'GylSubscribersTable', 'GylQueueTable' ],
-          'permissions': [
-            {
-              'actions': [ 'dynamodb:Query' ],
-              'resourceName': 'GylSubscribersTable',
-              'resourceNameSuffix': '/index/EmailToStatusIndex',
-            },
-            {
-              'actions': [ 'dynamodb:Query' ],
-              'resourceName': 'GylQueueTable',
-              'resourceNameSuffix': '/index/SubscriberIdIndex'
-            },
-            {
-              'actions': [ 'dynamodb:BatchWriteItem' ],
-              'resourceName': 'GylQueueTable'
-            },
-            {
-              'actions': [ 'dynamodb:DeleteItem' ],
-              'resourceName': 'GylSubscribersTable',
-            },
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-subscriber-delete-dist.zip',
-          'description': 'Deletes a subscriber',
-          'env': {
-            'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-          }
-        }
-      },
-    },
-    'Queue': {
-      '_methods': {
-        'GET': {
-          'role': {
-            'dependsOn': [ 'GylSubscribersTable', 'GylQueueTable' ],
-            'permissions': [
-              {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylSubscribersTable',
-                'resourceNameSuffix': '/index/EmailToStatusIndex',
+            func: {
+              zipfile: 'gyl-admin-subscriber-tag-post-dist.zip',
+              description: 'Adds a tag to a subscriber.',
+              env: {
+                DB_TABLE_PREFIX: '!Ref DbTablePrefix',
               },
-              {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylQueueTable',
-                'resourceNameSuffix': '/index/SubscriberIdIndex'
-              },
-              {
-                'actions': [ 'dynamodb:BatchGetItem' ],
-                'resourceName': 'GylQueueTable'
-              },
-            ]
+            },
           },
-          'func': {
-            'zipfile': 'gyl-admin-subscriber-queue-get-dist.zip',
-            'description': 'Gets a subscribers queued items',
-            'env': {
-              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-            }
-          }
+        },
+      },
+      Untag: {
+        _methods: {
+          POST: {
+            useAuthorizer: true,
+            role: {
+              dependsOn: ['GylSubscribersTable'],
+              permissions: [
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylSubscribersTable',
+                  resourceNameSuffix: '/index/EmailToStatusIndex',
+                },
+                {
+                  actions: ['dynamodb:UpdateItem'],
+                  resourceName: 'GylSubscribersTable',
+                },
+              ],
+            },
+            func: {
+              zipfile: 'gyl-admin-subscriber-untag-post-dist.zip',
+              description: 'Removes a tag from a subscriber.',
+              env: {
+                DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+              },
+            },
+          },
+        },
+      },
+      Unsubscribe: {
+        _methods: {
+          POST: {
+            useAuthorizer: true,
+            role: {
+              dependsOn: ['GylSubscribersTable', 'GylQueueTable'],
+              permissions: [
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylSubscribersTable',
+                  resourceNameSuffix: '/index/EmailToStatusIndex',
+                },
+                {
+                  actions: ['dynamodb:UpdateItem'],
+                  resourceName: 'GylSubscribersTable',
+                },
+                {
+                  actions: ['dynamodb:Query'],
+                  resourceName: 'GylQueueTable',
+                  resourceNameSuffix: '/index/SubscriberIdIndex',
+                },
+                {
+                  actions: ['dynamodb:BatchWriteItem'],
+                  resourceName: 'GylQueueTable',
+                },
+              ],
+            },
+            func: {
+              zipfile: 'gyl-admin-subscriber-unsubscribe-post-dist.zip',
+              description: 'Unsubscribes a subscriber',
+              env: {
+                DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+              },
+            },
+          },
         },
       },
     },
-    'Status': {
-      '_methods': {
-        'GET': {
-          'role': {
-            'dependsOn': [ 'GylSubscribersTable' ],
-            'permissions': [
+    Subscribers: {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: [
+              'GylSubscribersTable',
+            ],
+            permissions: [
               {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylSubscribersTable',
-                'resourceNameSuffix': '/index/EmailToStatusIndex',
+                actions: [ 'dynamodb:BatchWriteItem' ],
+                resourceName: 'GylSubscribersTable',
               },
-            ]
+            ],
           },
-          'func': {
-            'zipfile': 'gyl-admin-subscriber-status-get-dist.zip',
-            'description': 'Gets the status of a subscriber (subscriberId, email, unsubscribed, confirmed, tags)',
-            'env': {
-              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-            }
-          }
+          func: {
+            zipfile: 'gyl-admin-subscribers-post-dist.zip',
+            description:
+              'Posts multiple subscribers (between 1 and 25 subscribers inclusive)',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+            },
+          },
         },
       },
     },
-    'Tag': {
-      '_methods': {
-        'POST': {
-          'role': {
-            'dependsOn': [ 'GylSubscribersTable' ],
-            'permissions': [
+    'Subscriber-Count': {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
               {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylSubscribersTable',
-                'resourceNameSuffix': '/index/EmailToStatusIndex'
+                actions: ['dynamodb:PutItem'],
+                resourceName: 'GylSettingsTable',
               },
-              {
-                'actions': [ 'dynamodb:UpdateItem' ],
-                'resourceName': 'GylSubscribersTable',
-              },
-            ]
+            ],
           },
-          'func': {
-            'zipfile': 'gyl-admin-subscriber-tag-post-dist.zip',
-            'description': 'Adds a tag to a subscriber.',
-            'env': {
-              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-            }
-          }
+          func: {
+            zipfile: 'gyl-admin-subscriber-count-post-dist.zip',
+            description: 'Triggers a count of subscribers',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
         },
-      }
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-subscriber-count-get-dist.zip',
+            description: 'Gets the status of the subscriber count',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+      },
     },
-    'Untag': {
-      '_methods': {
-        'POST': {
-          'role': {
-            'dependsOn': [ 'GylSubscribersTable' ],
-            'permissions': [
+    Template: {
+      _methods: {
+        POST: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: [],
+            permissions: [
               {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylSubscribersTable',
-                'resourceNameSuffix': '/index/EmailToStatusIndex'
+                actions: ['ses:CreateTemplate', 'ses:UpdateTemplate'],
+                resource: '*',
               },
-              {
-                'actions': [ 'dynamodb:UpdateItem' ],
-                'resourceName': 'GylSubscribersTable',
-              },
-            ]
+            ],
           },
-          'func': {
-            'zipfile': 'gyl-admin-subscriber-untag-post-dist.zip',
-            'description': 'Removes a tag from a subscriber.',
-            'env': {
-              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-            }
-          }
+          func: {
+            zipfile: 'gyl-admin-template-post-dist.zip',
+            description: 'Posts (creates or updates) an email template.',
+          },
         },
-      }
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: [],
+            permissions: [
+              {
+                actions: ['ses:GetTemplate'],
+                resource: '*',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-template-get-dist.zip',
+            description: 'Gets an email template.',
+          },
+        },
+        DELETE: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: [],
+            permissions: [
+              {
+                actions: ['ses:DeleteTemplate'],
+                resource: '*',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-template-delete-dist.zip',
+            description: 'Deletes an email template.',
+          },
+        },
+      },
     },
-    'Unsubscribe': {
-      '_methods': {
-        'POST': {
-          'role': {
-            'dependsOn': [ 'GylSubscribersTable', 'GylQueueTable' ],
-            'permissions': [
+    Templates: {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: [],
+            permissions: [
               {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylSubscribersTable',
-                'resourceNameSuffix': '/index/EmailToStatusIndex'
+                actions: ['ses:ListTemplates'],
+                resource: '*',
               },
-              {
-                'actions': [ 'dynamodb:UpdateItem' ],
-                'resourceName': 'GylSubscribersTable',
-              },
-              {
-                'actions': [ 'dynamodb:Query' ],
-                'resourceName': 'GylQueueTable',
-                'resourceNameSuffix': '/index/SubscriberIdIndex'
-              },
-              {
-                'actions': [ 'dynamodb:BatchWriteItem' ],
-                'resourceName': 'GylQueueTable'
-              },
-            ]
+            ],
           },
-          'func': {
-            'zipfile': 'gyl-admin-subscriber-unsubscribe-post-dist.zip',
-            'description': 'Unsubscribes a subscriber',
-            'env': {
-              'DB_TABLE_PREFIX': '!Ref DbTablePrefix',
-            }
-          }
+          func: {
+            zipfile: 'gyl-admin-templates-get-dist.zip',
+            description: 'Gets a list of meta info about templates.',
+          },
         },
-      }
-    }
+      },
+    },
   },
-  'Subscriber-Count': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': ['GylSettingsTable'],
-          'permissions': [
-            {
-              'actions': ['dynamodb:PutItem'],
-              'resourceName': 'GylSettingsTable',
-            }
-          ]
+};
+
+const publicApiShorthand = {
+  Subscriber: {
+    Confirm: {
+      _methods: {
+        GET: {
+          useAuthorizer: false,
+          role: {
+            dependsOn: ['GylSubscribersTable', 'GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+              {
+                actions: ['dynamodb:UpdateItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+              {
+                actions: ['dynamodb:Settings'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-public-subscriber-confirm-get-dist.zip',
+            description: 'Confirms a subscriber in response to link click',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+            },
+          },
         },
-        'func': {
-          'zipfile': 'gyl-admin-subscriber-count-post-dist.zip',
-          'description': 'Triggers a count of subscribers',
-          'env': { 'DB_TABLE_PREFIX': '!Ref DbTablePrefix' },
-        }
-      }
-    }
+      },
+    },
+    Unsubscribe: {
+      _methods: {
+        GET: {
+          useAuthorizer: false,
+          role: {
+            dependsOn: ['GylSubscribersTable', 'GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
+              {
+                actions: ['dynamodb:UpdateItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-public-subscriber-unsubscribe-get-dist.zip',
+            description: 'Gets a public unsubscribe request',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+            },
+          },
+        },
+        POST: {
+          useAuthorizer: false,
+          role: {
+            dependsOn: ['GylSubscribersTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylSubscribersTable',
+                resourceNameSuffix: '/index/EmailToStatusIndex',
+              },
+              {
+                actions: ['dynamodb:UpdateItem'],
+                resourceName: 'GylSubscribersTable',
+              },
+              {
+                actions: ['dynamodb:Query'],
+                resourceName: 'GylQueueTable',
+                resourceNameSuffix: '/index/SubscriberIdIndex',
+              },
+              {
+                actions: ['dynamodb:BatchWriteItem'],
+                resourceName: 'GylQueueTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-public-subscriber-unsubscribe-post-dist.zip',
+            description: 'Posts a public unsubscribe request',
+            env: {
+              DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+            },
+          },
+        },
+      },
+    },
   },
-  'Template': {
-    '_methods': {
-      'POST': {
-        'role': {
-          'dependsOn': [],
-          'permissions': [
-            {
-              'actions': [ 'ses:CreateTemplate', 'ses:UpdateTemplate' ],
-              'resource': '*'
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-template-post-dist.zip',
-          'description': 'Posts (creates or updates) an email template.',
-        }
-      },
-      'GET': {
-        'role': {
-          'dependsOn': [],
-          'permissions': [
-            {
-              'actions': [ 'ses:GetTemplate' ],
-              'resource': '*',
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-template-get-dist.zip',
-          'description': 'Gets an email template.',
-        }
-      },
-      'DELETE': {
-        'role': {
-          'dependsOn': [],
-          'permissions': [
-            {
-              'actions': [ 'ses:DeleteTemplate' ],
-              'resource': '*',
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-template-delete-dist.zip',
-          'description': 'Deletes an email template.',
-        }
-      }
-    }
-  },
-  'Templates': {
-    '_methods': {
-      'GET': {
-        'role': {
-          'dependsOn': [],
-          'permissions': [
-            {
-              'actions': [ 'ses:ListTemplates' ],
-              'resource': '*',
-            }
-          ]
-        },
-        'func': {
-          'zipfile': 'gyl-admin-templates-get-dist.zip',
-          'description': 'Gets a list of meta info about templates.',
-        }
-      },
-    }
-  }
-}
+};
 
 const generatePermissionActionYaml = (action, indentSize) => {
-  const indent = '  '.repeat(indentSize)
-  const yaml = `${indent}- ${action}\n`
-  return yaml
-}
+  const indent = '  '.repeat(indentSize);
+  const yaml = `${indent}- ${action}\n`;
+  return yaml;
+};
 
 const generatePermissionYaml = (permission, indentSize = 7) => {
-  const indent = '  '.repeat(indentSize)
+  const indent = '  '.repeat(indentSize);
   let yaml = `${indent}-
 ${indent}  Effect: Allow
 ${indent}  Action:
-`
+`;
   permission['actions'].forEach(action => {
-    yaml += generatePermissionActionYaml(action, indentSize + 2)
+    yaml += generatePermissionActionYaml(action, indentSize + 2);
   });
   if (permission['resource']) {
-    yaml += `${indent}  Resource: '${permission['resource']}'\n`
-  }
-  else if (permission['resourceName']) {
+    yaml += `${indent}  Resource: '${permission['resource']}'\n`;
+  } else if (permission['resourceName']) {
     if (permission['resourceNameSuffix']) {
       yaml += `${indent}  Resource:
 ${indent}    - !Join
@@ -540,29 +744,28 @@ ${indent}      - - !GetAtt
 ${indent}          - ${permission['resourceName']}
 ${indent}          - Arn
 ${indent}        - ${permission['resourceNameSuffix']}
-`
-    }
-    else {
+`;
+    } else {
       yaml += `${indent}  Resource:
 ${indent}    - !GetAtt
 ${indent}      - ${permission['resourceName']}
 ${indent}      - Arn
-`
+`;
     }
   }
   return yaml;
-}
+};
 
 const generateRoleYaml = (methodName, def) => {
   let yaml = `  ${methodName}LambdaRole:
     Type: AWS::IAM::Role
-`
+`;
   if (def['dependsOn'] && def['dependsOn'].length) {
     yaml += `    DependsOn:
 `;
     def['dependsOn'].forEach(dep => {
-      yaml += `      - ${dep}\n`
-    })
+      yaml += `      - ${dep}\n`;
+    });
   }
   yaml += `    Properties:
       AssumeRolePolicyDocument:
@@ -605,12 +808,12 @@ const generateRoleYaml = (methodName, def) => {
                     -
                       Ref: AWS::AccountId
                     - ':log-group:/aws/lambda/${methodName}:*'
-`
+`;
   def['permissions'].forEach(permission => {
-    yaml += generatePermissionYaml(permission)
-  })
+    yaml += generatePermissionYaml(permission);
+  });
   return yaml;
-}
+};
 
 const generateLambdaYaml = (methodName, def) => {
   let yaml = `  ${methodName}Lambda:
@@ -626,19 +829,19 @@ const generateLambdaYaml = (methodName, def) => {
         - ${methodName}LambdaRole
         - Arn
       Runtime: nodejs12.x
-`
+`;
   if (def['env']) {
     yaml += `      Environment:
         Variables:
-`
+`;
     Object.keys(def['env']).forEach(key => {
-      yaml += `          ${key}: ${def['env'][key]}\n`
-    })
+      yaml += `          ${key}: ${def['env'][key]}\n`;
+    });
   }
-  return yaml
-}
+  return yaml;
+};
 
-const generateLambdaPermissionYaml = methodName => {
+const generateLambdaPermissionYaml = (methodName, apiBaseId) => {
   let yaml = `  ${methodName}Permission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -657,44 +860,51 @@ const generateLambdaPermissionYaml = methodName => {
             Ref: AWS::AccountId
           - ':'
           -
-            Ref: GylApi
+            Ref: ${apiBaseId}
           - '/*'
-`
+`;
   return yaml;
-}
+};
 
-const generateResourceYaml = (name, parentInfo) => {
-  let realName = name
-  let resource = 'GylApiAdminResource'
+const generateResourceYaml = (name, parentInfo, apiBaseId) => {
+  let realName = name;
+  let resource = `${apiBaseId}Resource`;
+  let parentId = '';
   if (parentInfo.name) {
-    realName = name.substring(parentInfo.name.length)
-    resource = `GylApi${parentInfo.name}Resource`
+    realName = name.substring(parentInfo.name.length);
+    resource = `${apiBaseId}${parentInfo.name}Resource`;
+    parentId = `!Ref ${resource}`;
   }
-  let yaml = `  GylApi${name.replace(/-/g, '')}Resource:
+  else {
+    parentId = `!GetAtt
+        - ${apiBaseId}
+        - RootResourceId`
+  }
+  let yaml = `  ${apiBaseId}${name.replace(/-/g, '')}Resource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId:
-        Ref: GylApi
-      ParentId: !Ref ${resource}
+        Ref: ${apiBaseId}
+      ParentId: ${parentId}
       PathPart: ${realName.toLocaleLowerCase()}
-`
+`;
   return yaml;
-}
+};
 
-const generateOptionsYaml = (name, methods) => {
-  let yaml = `  GylApi${name}Options:
+const generateOptionsYaml = (name, methods, apiBaseId) => {
+  let yaml = `  ${apiBaseId}${name}Options:
     Type: AWS::ApiGateway::Method
     DependsOn:
-      - GylApiEmptyModel
+      - ${apiBaseId}EmptyModel
     Properties:
       HttpMethod: OPTIONS
       AuthorizationType: NONE
       ApiKeyRequired: false
       RequestParameters: {}
       ResourceId:
-        Ref: GylApi${name}Resource
+        Ref: ${apiBaseId}${name}Resource
       RestApiId:
-        Ref: GylApi
+        Ref: ${apiBaseId}
       MethodResponses:
         -
           StatusCode: '200'
@@ -703,7 +913,7 @@ const generateOptionsYaml = (name, methods) => {
             method.response.header.Access-Control-Allow-Methods: false
             method.response.header.Access-Control-Allow-Origin: false
           ResponseModels:
-            application/json: GylApiEmptyModel
+            application/json: ${apiBaseId}EmptyModel
       Integration:
         Type: MOCK
         RequestTemplates:
@@ -717,25 +927,35 @@ const generateOptionsYaml = (name, methods) => {
               method.response.header.Access-Control-Allow-Methods: >-
                 '${methods.concat('OPTIONS').join(',')}'
               method.response.header.Access-Control-Allow-Origin: "'*'"
-`
+`;
   return yaml;
-}
+};
 
-const generateMethodYaml = (resourceName, methodName, method) => {
-  let yaml = `  GylApi${methodName}:
+const generateMethodYaml = (resourceName, methodName, method, useAuthorizer, apiBaseId) => {
+  if (typeof useAuthorizer !== 'boolean') {
+    console.warn(`Authorizer is not boolean ${resourceName} ${methodName} ${method}`)
+  }
+  let authorizer = '';
+  if (useAuthorizer) {
+    authorizer = `AuthorizationType: CUSTOM
+      AuthorizerId: !Ref ${apiBaseId}Authorizer`;
+  }
+  else {
+    authorizer = `AuthorizationType: NONE`;
+  }
+  let yaml = `  ${apiBaseId}${methodName}:
     Type: AWS::ApiGateway::Method
     DependsOn:
       - Gyl${methodName}Permission
     Properties:
       HttpMethod: ${method}
-      AuthorizationType: CUSTOM
-      AuthorizerId: !Ref GylApiAuthorizer
+      ${authorizer}
       ApiKeyRequired: false
       RequestParameters: {}
       ResourceId:
-        Ref: GylApi${resourceName}Resource
+        Ref: ${apiBaseId}${resourceName}Resource
       RestApiId:
-        Ref: GylApi
+        Ref: ${apiBaseId}
       MethodResponses:
         -
           StatusCode: '200'
@@ -760,67 +980,90 @@ const generateMethodYaml = (resourceName, methodName, method) => {
             StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
-`
+`;
   return yaml;
-}
+};
 
-const generateYaml = (def, parentInfo = {name: '', resource: ''}) => {
+const generateYaml = (def, apiBaseId, parentInfo = { name: '' }) => {
   let yaml = '';
-  Object.keys(def).filter(k => k !== '_methods').forEach(resourceKey => {
-    const resourceDef = def[resourceKey]
-    const resourceName = `${parentInfo.name}${resourceKey}`
-    Object.keys(resourceDef['_methods']).forEach(methodKey => {
-      const methodNameShort = `${resourceName}${methodKey.charAt(0)}${
-        methodKey.substring(1).toLocaleLowerCase()
-      }`
-      const methodName = `Gyl${methodNameShort.replace(/-/g, '')}`
-      yaml += generateRoleYaml(
-        methodName,
-        resourceDef['_methods'][methodKey]['role'],
+  Object.keys(def)
+    .filter(k => k !== '_methods')
+    .forEach(resourceKey => {
+      const resourceDef = def[resourceKey];
+      const resourceName = `${parentInfo.name}${resourceKey}`;
+      if (typeof resourceDef['_methods'] === 'object') {
+        Object.keys(resourceDef['_methods']).forEach(methodKey => {
+          const methodNameShort = `${resourceName}${methodKey.charAt(
+            0
+          )}${methodKey.substring(1).toLocaleLowerCase()}`;
+          const methodName = `Gyl${methodNameShort.replace(/-/g, '')}`;
+          yaml += generateRoleYaml(
+            methodName,
+            resourceDef['_methods'][methodKey]['role']
+          );
+          yaml += generateLambdaYaml(
+            methodName,
+            resourceDef['_methods'][methodKey]['func']
+          );
+          yaml += generateLambdaPermissionYaml(methodName, apiBaseId);
+          yaml += generateMethodYaml(
+            resourceName.replace(/-/g, ''),
+            methodNameShort.replace(/-/g, ''),
+            methodKey,
+            resourceDef['_methods'][methodKey]['useAuthorizer'],
+            apiBaseId,
+          );
+        });
+        yaml += generateOptionsYaml(
+          resourceName.replace(/-/g, ''),
+          Object.keys(resourceDef['_methods']),
+          apiBaseId,
+        );
+      }
+      yaml += generateResourceYaml(resourceName, parentInfo, apiBaseId);
+      const subResources = Object.keys(resourceDef).filter(
+        k => k !== '_methods'
       );
-      yaml += generateLambdaYaml(
-        methodName,
-        resourceDef['_methods'][methodKey]['func'],
-      );
-      yaml += generateLambdaPermissionYaml(
-        methodName
-      )
-      yaml += generateMethodYaml(
-        resourceName.replace(/-/g, ''),
-        methodNameShort.replace(/-/g, ''),
-        methodKey,
-      )
-    })
-    yaml += generateResourceYaml(resourceName, parentInfo)
-    yaml += generateOptionsYaml(
-      resourceName.replace(/-/g, ''), Object.keys(resourceDef['_methods'])
-    )
-    const subResources = Object.keys(resourceDef).filter(k => k !== '_methods')
-    if (subResources.length) {
-      yaml += generateYaml(resourceDef, {
-        name: resourceKey,
-      })
-    }
-  })
+      if (subResources.length) {
+        yaml += generateYaml(resourceDef, apiBaseId, {
+          name: parentInfo.name + resourceKey,
+        });
+      }
+    });
   return yaml;
-}
+};
 
-const outputYaml = generateYaml(shorthand)
-let newTemplate = ''
+const adminApiYaml = generateYaml(adminApiShorthand, 'GylAdminApi');
+const publicApiYaml = generateYaml(publicApiShorthand, 'GylPublicApi');
+
+let newTemplate = '';
 let inGeneratedContent = false;
-let generatedOpenPattern = /### BEGIN GENERATED PART/
-let generatedClosePattern = /### END GENERATED PART/
-readFileSync(join(__dirname, 'gyl-template.yaml')).toString('utf8').split('\n').forEach(line => {
-  if (!inGeneratedContent) {
-    newTemplate += line + '\n';
-  }
-  if (generatedOpenPattern.test(line)) {
-    inGeneratedContent = true
-    newTemplate += outputYaml
-  }
-  else if (generatedClosePattern.test(line)) {
-    newTemplate += line + '\n'
-    inGeneratedContent = false
-  }
-})
-writeFileSync(join(__dirname, 'gyl-template-new.yaml'), newTemplate.trimRight() + '\n');
+let generatedAdminApiBeginPattern = /### BEGIN ADMIN API GENERATED PART/;
+let generatedAdminApiEndPattern = /### END ADMIN API GENERATED PART/;
+let generatedPublicApiBeginPattern = /### BEGIN PUBLIC API GENERATED PART/;
+let generatedPublicApiEndPattern = /### END PUBLIC API GENERATED PART/;
+readFileSync(join(__dirname, 'gyl-template.yaml'))
+  .toString('utf8')
+  .split('\n')
+  .forEach(line => {
+    if (!inGeneratedContent) {
+      newTemplate += line + '\n';
+    }
+    if (generatedAdminApiBeginPattern.test(line)) {
+      inGeneratedContent = true;
+      newTemplate += adminApiYaml;
+    } else if (generatedAdminApiEndPattern.test(line)) {
+      newTemplate += line + '\n';
+      inGeneratedContent = false;
+    } else if (generatedPublicApiBeginPattern.test(line)) {
+      inGeneratedContent = true;
+      newTemplate += publicApiYaml;
+    } else if (generatedPublicApiEndPattern.test(line)) {
+      newTemplate += line + '\n';
+      inGeneratedContent = false;
+    }
+  });
+writeFileSync(
+  join(__dirname, 'gyl-template-new.yaml'),
+  newTemplate.trimRight() + '\n'
+);

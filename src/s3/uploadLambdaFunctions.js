@@ -15,6 +15,11 @@ const ensureCloudProjectFolderExists = async tempCloudDir => {
 };
 
 const uploadLambdaFunctionsToS3 = async () => {
+
+	if (process.env.EXISTING_LAMBDA_BUCKET) {
+		return process.env.EXISTING_LAMBDA_BUCKET;
+	}
+
 	Logger.log('Uploading lambda functions...')
 	const tempCloudFuncsDir = join(process.cwd(), 'temp', 'gyl-cloud-functions');
 	ensureTempDirExistsSync(tempCloudFuncsDir);

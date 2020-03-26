@@ -1,6 +1,10 @@
 const readline = require('readline');
 
-const validateSourceEmail = async () => {
+const getAdminEmail = async () => {
+
+	if (process.env.GYL_ADMIN_EMAIL) {
+		return process.env.GYL_ADMIN_EMAIL;
+	}
 
 	const askForEmail = async () => {
 		let email = '';
@@ -36,4 +40,4 @@ const validateSourceEmail = async () => {
 	return email.trim();
 };
 
-module.exports = validateSourceEmail;
+module.exports = getAdminEmail;
