@@ -8,11 +8,10 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylQueueTable'],
             permissions: [
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
               },
             ],
           },
@@ -29,11 +28,10 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:PutItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -46,11 +44,10 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable '],
             permissions: [
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -63,11 +60,10 @@ const adminApiShorthand = {
         DELETE: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:DeleteItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -84,9 +80,11 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable '],
             permissions: [
-              { actions: ['dynamodb:Scan'], resourceName: 'GylSettingsTable' },
+              {
+                actions: ['dynamodb:Scan'],
+                resource: '!Ref GylSettingsTableArn'
+              },
             ],
           },
           func: {
@@ -102,7 +100,6 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['ses:GetTemplate'],
@@ -110,7 +107,7 @@ const adminApiShorthand = {
               },
               {
                 actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -127,11 +124,10 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -148,11 +144,10 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:UpdateItem', 'dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -165,11 +160,10 @@ const adminApiShorthand = {
         DELETE: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:UpdateItem', 'dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -186,11 +180,10 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -207,17 +200,16 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
           func: {
             zipfile: 'gyl-admin-postal-address-get-dist.zip',
-            description: '',
+            description: 'Gets the account postal address',
             env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
           },
         },
@@ -228,7 +220,6 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: null,
             permissions: [
               {
                 actions: ['ses:SendEmail'],
@@ -236,16 +227,16 @@ const adminApiShorthand = {
               },
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: ['dynamodb:PutItem', 'dynamodb:GetItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
               {
                 actions: ['dynamodb:PutItem'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
               },
             ],
           },
@@ -265,16 +256,15 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSubscribersTable'],
             permissions: [
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
             ],
           },
@@ -289,11 +279,6 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: [
-              'GylSubscribersTable',
-              'GylQueueTable',
-              'GylSettingsTable',
-            ],
             permissions: [
               {
                 actions: ['ses:SendTemplatedEmail'],
@@ -301,16 +286,16 @@ const adminApiShorthand = {
               },
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
               {
                 actions: [
@@ -318,11 +303,11 @@ const adminApiShorthand = {
                   'dynamodb:BatchGetItem',
                   'dynamodb:BatchWriteItem',
                 ],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
               },
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
                 resourceNameSuffix: '/index/SubscriberIdIndex',
               },
             ],
@@ -340,25 +325,24 @@ const adminApiShorthand = {
         DELETE: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSubscribersTable', 'GylQueueTable'],
             permissions: [
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
                 resourceNameSuffix: '/index/SubscriberIdIndex',
               },
               {
                 actions: ['dynamodb:BatchWriteItem'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
               },
               {
                 actions: ['dynamodb:DeleteItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
             ],
           },
@@ -376,21 +360,20 @@ const adminApiShorthand = {
           GET: {
             useAuthorizer: true,
             role: {
-              dependsOn: ['GylSubscribersTable', 'GylQueueTable'],
               permissions: [
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                   resourceNameSuffix: '/index/EmailToStatusIndex',
                 },
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylQueueTable',
+                  resource: '!Ref GylQueueTableArn',
                   resourceNameSuffix: '/index/SubscriberIdIndex',
                 },
                 {
                   actions: ['dynamodb:BatchGetItem'],
-                  resourceName: 'GylQueueTable',
+                  resource: '!Ref GylQueueTableArn',
                 },
               ],
             },
@@ -409,11 +392,10 @@ const adminApiShorthand = {
           GET: {
             useAuthorizer: true,
             role: {
-              dependsOn: ['GylSubscribersTable'],
               permissions: [
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                   resourceNameSuffix: '/index/EmailToStatusIndex',
                 },
               ],
@@ -434,16 +416,15 @@ const adminApiShorthand = {
           POST: {
             useAuthorizer: true,
             role: {
-              dependsOn: ['GylSubscribersTable'],
               permissions: [
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                   resourceNameSuffix: '/index/EmailToStatusIndex',
                 },
                 {
                   actions: ['dynamodb:UpdateItem'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                 },
               ],
             },
@@ -462,16 +443,15 @@ const adminApiShorthand = {
           POST: {
             useAuthorizer: true,
             role: {
-              dependsOn: ['GylSubscribersTable'],
               permissions: [
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                   resourceNameSuffix: '/index/EmailToStatusIndex',
                 },
                 {
                   actions: ['dynamodb:UpdateItem'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                 },
               ],
             },
@@ -490,25 +470,24 @@ const adminApiShorthand = {
           POST: {
             useAuthorizer: true,
             role: {
-              dependsOn: ['GylSubscribersTable', 'GylQueueTable'],
               permissions: [
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                   resourceNameSuffix: '/index/EmailToStatusIndex',
                 },
                 {
                   actions: ['dynamodb:UpdateItem'],
-                  resourceName: 'GylSubscribersTable',
+                  resource: '!Ref GylSubscribersTableArn',
                 },
                 {
                   actions: ['dynamodb:Query'],
-                  resourceName: 'GylQueueTable',
+                  resource: '!Ref GylQueueTableArn',
                   resourceNameSuffix: '/index/SubscriberIdIndex',
                 },
                 {
                   actions: ['dynamodb:BatchWriteItem'],
-                  resourceName: 'GylQueueTable',
+                  resource: '!Ref GylQueueTableArn',
                 },
               ],
             },
@@ -528,18 +507,15 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: [
-              'GylSubscribersTable',
-            ],
             permissions: [
               {
                 actions: [ 'dynamodb:Query' ],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: [ 'dynamodb:BatchWriteItem' ],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
             ],
           },
@@ -559,11 +535,10 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:PutItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -576,11 +551,10 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: ['GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -597,7 +571,6 @@ const adminApiShorthand = {
         POST: {
           useAuthorizer: true,
           role: {
-            dependsOn: [],
             permissions: [
               {
                 actions: ['ses:CreateTemplate', 'ses:UpdateTemplate'],
@@ -613,7 +586,6 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: [],
             permissions: [
               {
                 actions: ['ses:GetTemplate'],
@@ -629,7 +601,6 @@ const adminApiShorthand = {
         DELETE: {
           useAuthorizer: true,
           role: {
-            dependsOn: [],
             permissions: [
               {
                 actions: ['ses:DeleteTemplate'],
@@ -649,7 +620,6 @@ const adminApiShorthand = {
         GET: {
           useAuthorizer: true,
           role: {
-            dependsOn: [],
             permissions: [
               {
                 actions: ['ses:ListTemplates'],
@@ -674,19 +644,18 @@ const publicApiShorthand = {
         GET: {
           useAuthorizer: false,
           role: {
-            dependsOn: ['GylSubscribersTable', 'GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
               {
                 actions: ['dynamodb:UpdateItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
               {
                 actions: ['dynamodb:Settings'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -705,20 +674,19 @@ const publicApiShorthand = {
         GET: {
           useAuthorizer: false,
           role: {
-            dependsOn: ['GylSubscribersTable', 'GylSettingsTable'],
             permissions: [
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: ['dynamodb:UpdateItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
               {
                 actions: ['dynamodb:GetItem'],
-                resourceName: 'GylSettingsTable',
+                resource: '!Ref GylSettingsTableArn',
               },
             ],
           },
@@ -726,6 +694,18 @@ const publicApiShorthand = {
             zipfile: 'gyl-public-subscriber-unsubscribe-get-dist.zip',
             description: 'Gets a public unsubscribe request',
             env: {
+              PUBLIC_API: `!Join
+  - ''
+  - - https://
+    -
+      Ref: GylPublicApi
+    - .execute-api.
+    -
+      Ref: AWS::Region
+    - .amazonaws.com/
+    -
+      Ref: GylPublicApiBetaStage`,
+              GLOBAL_UNSUBSCRIBE_URL: 'https://www.growyourlist.com/unsubscribe/',
               DB_TABLE_PREFIX: '!Ref DbTablePrefix',
             },
           },
@@ -733,25 +713,24 @@ const publicApiShorthand = {
         POST: {
           useAuthorizer: false,
           role: {
-            dependsOn: ['GylSubscribersTable'],
             permissions: [
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
                 resourceNameSuffix: '/index/EmailToStatusIndex',
               },
               {
                 actions: ['dynamodb:UpdateItem'],
-                resourceName: 'GylSubscribersTable',
+                resource: '!Ref GylSubscribersTableArn',
               },
               {
                 actions: ['dynamodb:Query'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
                 resourceNameSuffix: '/index/SubscriberIdIndex',
               },
               {
                 actions: ['dynamodb:BatchWriteItem'],
-                resourceName: 'GylQueueTable',
+                resource: '!Ref GylQueueTableArn',
               },
             ],
           },
@@ -784,7 +763,17 @@ ${indent}  Action:
     yaml += generatePermissionActionYaml(action, indentSize + 2);
   });
   if (permission['resource']) {
-    yaml += `${indent}  Resource: '${permission['resource']}'\n`;
+    if (permission['resourceNameSuffix']) {
+      yaml += `${indent}  Resource:
+${indent}    - !Join
+${indent}      - ''
+${indent}      - - ${permission['resource']}
+${indent}        - ${permission['resourceNameSuffix']}
+`
+    }
+    else {
+      yaml += `${indent}  Resource: ${permission['resource'] === '*' ? "'*'" : permission['resource']}\n`;
+    }
   } else if (permission['resourceName']) {
     if (permission['resourceNameSuffix']) {
       yaml += `${indent}  Resource:
@@ -885,7 +874,20 @@ const generateLambdaYaml = (methodName, def) => {
         Variables:
 `;
     Object.keys(def['env']).forEach(key => {
-      yaml += `          ${key}: ${def['env'][key]}\n`;
+      const baseIndent = '          ';
+      if (def['env'][key].indexOf('\n') >= 0) {
+        def['env'][key].split('\n').forEach((line, index) => {
+          if (index === 0) {
+            yaml += `${baseIndent}${key}: ${line}\n`;
+          }
+          else {
+            yaml += `${baseIndent}${line}\n`
+          }
+        });
+      }
+      else {
+        yaml += `${baseIndent}${key}: ${def['env'][key]}\n`;
+      }
     });
   }
   return yaml;

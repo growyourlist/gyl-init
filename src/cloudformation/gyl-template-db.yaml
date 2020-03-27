@@ -1,0 +1,109 @@
+Parameters:
+  DbTablePrefix:
+    Description: Prefix for DynamoDB tables
+    Type: String
+
+Resources:
+  # DynamoDB Tables
+  GylSettingsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        -
+          AttributeName: settingName
+          AttributeType: S
+      TableName: !Sub
+        - '${DbTablePrefix}Settings'
+        - 
+          DbTablePrefix: !Ref DbTablePrefix
+      KeySchema:
+        -
+          AttributeName: settingName
+          KeyType: HASH
+  GylQueueTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}Queue'
+        - 
+          DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        -
+          AttributeName: queuePlacement
+          AttributeType: S
+        -
+          AttributeName: runAtModified
+          AttributeType: S
+        -
+          AttributeName: subscriberId
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: queuePlacement
+          KeyType: HASH
+        -
+          AttributeName: runAtModified
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        -
+          IndexName: SubscriberIdIndex
+          KeySchema:
+            -
+              AttributeName: subscriberId
+              KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+              - tagReason
+            ProjectionType: INCLUDE
+  GylSubscribersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}Subscribers'
+        - 
+          DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        -
+          AttributeName: subscriberId
+          AttributeType: S
+        -
+          AttributeName: email
+          AttributeType: S
+      KeySchema:
+        -
+          AttributeName: subscriberId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        -
+          IndexName: EmailToStatusIndex
+          KeySchema:
+            -
+              AttributeName: email
+              KeyType: HASH
+          Projection:
+            NonKeyAttributes:
+              - unsubscribed
+              - confirmed
+              - tags
+              - unsubscribeToken
+            ProjectionType: INCLUDE
+            
+Outputs:
+  GylSettingsTable:
+    Description: 'GylSettingsTableArn'
+    Value: !GetAtt
+      - GylSettingsTable
+      - Arn
+  GylQueueTable:
+    Description: 'GylQueueTableArn'
+    Value: !GetAtt
+      - GylQueueTable
+      - Arn
+  GylSubscribersTable:
+    Description: 'GylSubscribersTableArn'
+    Value: !GetAtt
+      - GylSubscribersTable
+      - Arn

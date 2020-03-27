@@ -32,6 +32,15 @@ Parameters:
   BroadcastUserSecretAccessKey:
     Description: The secret access key used by GYL Broadcast system
     Type: String
+  GylSettingsTableArn:
+    Description: Arn of the Settings DynamoDB table
+    Type: String
+  GylSubscribersTableArn:
+    Description: Arn of the Subscribers DynamoDB table
+    Type: String
+  GylQueueTableArn:
+    Description: Arn of the Queue DynamoDB table
+    Type: String
 
 Mappings:
   RegionMap:
@@ -371,9 +380,6 @@ Resources:
       PathPart: subscriber
   GylSubscriberConfirmGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -419,26 +425,17 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:Settings
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylSubscriberConfirmGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -556,9 +553,6 @@ Resources:
       PathPart: confirm
   GylSubscriberUnsubscribeGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -607,26 +601,18 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylSubscriberUnsubscribeGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -642,6 +628,18 @@ Resources:
       Runtime: nodejs12.x
       Environment:
         Variables:
+          PUBLIC_API: !Join
+            - ''
+            - - https://
+              -
+                Ref: GylPublicApi
+              - .execute-api.
+              -
+                Ref: AWS::Region
+              - .amazonaws.com/
+              -
+                Ref: GylPublicApiBetaStage
+          GLOBAL_UNSUBSCRIBE_URL: https://www.growyourlist.com/unsubscribe/
           DB_TABLE_PREFIX: !Ref DbTablePrefix
   GylSubscriberUnsubscribeGetPermission:
     Type: AWS::Lambda::Permission
@@ -702,8 +700,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylSubscriberUnsubscribePostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -752,18 +748,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
@@ -771,18 +762,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylQueueTable
-                        - Arn
+                    - - !Ref GylQueueTableArn
                       - /index/SubscriberIdIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:BatchWriteItem
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
   GylSubscriberUnsubscribePostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1306,8 +1292,6 @@ Resources:
       PathPart: admin
   GylAdminAnalyticsGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylQueueTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -1353,10 +1337,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:Query
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
   GylAdminAnalyticsGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1475,8 +1456,6 @@ Resources:
       PathPart: analytics
   GylAdminAutoresponderPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -1522,10 +1501,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:PutItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminAutoresponderPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1602,8 +1578,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminAutoresponderGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable 
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -1649,10 +1623,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminAutoresponderGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1729,8 +1700,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminAutoresponderDeleteLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -1776,10 +1745,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:DeleteItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminAutoresponderDeleteLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1898,8 +1864,6 @@ Resources:
       PathPart: autoresponder
   GylAdminAutorespondersGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable 
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -1945,10 +1909,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:Scan
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminAutorespondersGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2067,8 +2028,6 @@ Resources:
       PathPart: autoresponders
   GylAdminBroadcastPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2120,10 +2079,7 @@ Resources:
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminBroadcastPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2242,8 +2198,6 @@ Resources:
       PathPart: broadcast
   GylAdminEmailHistoryGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2289,10 +2243,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminEmailHistoryGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2411,8 +2362,6 @@ Resources:
       PathPart: email-history
   GylAdminListPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2459,10 +2408,7 @@ Resources:
                 Action:
                   - dynamodb:UpdateItem
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminListPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2539,8 +2485,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminListDeleteLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2587,10 +2531,7 @@ Resources:
                 Action:
                   - dynamodb:UpdateItem
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminListDeleteLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2709,8 +2650,6 @@ Resources:
       PathPart: list
   GylAdminListsGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2756,10 +2695,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminListsGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -2878,8 +2814,6 @@ Resources:
       PathPart: lists
   GylAdminPostalAddressGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -2925,17 +2859,14 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminPostalAddressGetLambda:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
         S3Key: gyl-admin-postal-address-get-dist.zip
-      Description: 
+      Description: Gets the account postal address
       FunctionName: GylAdminPostalAddressGet
       Handler: index.handler
       Role: !GetAtt
@@ -3100,27 +3031,19 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:PutItem
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
   GylAdminSingleEmailSendPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -3240,8 +3163,6 @@ Resources:
       PathPart: single-email-send
   GylAdminSubscriberGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -3290,18 +3211,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
   GylAdminSubscriberGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -3378,10 +3294,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminSubscriberPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
-      - GylQueueTable
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -3435,37 +3347,26 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:BatchGetItem
                   - dynamodb:BatchWriteItem
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
               -
                 Effect: Allow
                 Action:
@@ -3473,9 +3374,7 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylQueueTable
-                        - Arn
+                    - - !Ref GylQueueTableArn
                       - /index/SubscriberIdIndex
   GylAdminSubscriberPostLambda:
     Type: AWS::Lambda::Function
@@ -3554,9 +3453,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminSubscriberDeleteLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
-      - GylQueueTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -3605,9 +3501,7 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
@@ -3616,26 +3510,18 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylQueueTable
-                        - Arn
+                    - - !Ref GylQueueTableArn
                       - /index/SubscriberIdIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:BatchWriteItem
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:DeleteItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
   GylAdminSubscriberDeleteLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -3754,9 +3640,6 @@ Resources:
       PathPart: subscriber
   GylAdminSubscriberQueueGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
-      - GylQueueTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -3805,9 +3688,7 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
@@ -3816,18 +3697,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylQueueTable
-                        - Arn
+                    - - !Ref GylQueueTableArn
                       - /index/SubscriberIdIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:BatchGetItem
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
   GylAdminSubscriberQueueGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -3946,8 +3822,6 @@ Resources:
       PathPart: queue
   GylAdminSubscriberStatusGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -3996,9 +3870,7 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
   GylAdminSubscriberStatusGetLambda:
     Type: AWS::Lambda::Function
@@ -4118,8 +3990,6 @@ Resources:
       PathPart: status
   GylAdminSubscriberTagPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -4168,18 +4038,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
   GylAdminSubscriberTagPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -4298,8 +4163,6 @@ Resources:
       PathPart: tag
   GylAdminSubscriberUntagPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -4348,18 +4211,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
   GylAdminSubscriberUntagPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -4478,9 +4336,6 @@ Resources:
       PathPart: untag
   GylAdminSubscriberUnsubscribePostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
-      - GylQueueTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -4529,18 +4384,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
@@ -4548,18 +4398,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylQueueTable
-                        - Arn
+                    - - !Ref GylQueueTableArn
                       - /index/SubscriberIdIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:BatchWriteItem
-                Resource:
-                  - !GetAtt
-                    - GylQueueTable
-                    - Arn
+                Resource: !Ref GylQueueTableArn
   GylAdminSubscriberUnsubscribePostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -4678,8 +4523,6 @@ Resources:
       PathPart: unsubscribe
   GylAdminSubscribersPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSubscribersTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -4728,18 +4571,13 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:BatchWriteItem
-                Resource:
-                  - !GetAtt
-                    - GylSubscribersTable
-                    - Arn
+                Resource: !Ref GylSubscribersTableArn
   GylAdminSubscribersPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -4858,8 +4696,6 @@ Resources:
       PathPart: subscribers
   GylAdminSubscriberCountPostLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -4905,10 +4741,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:PutItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminSubscriberCountPostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -4985,8 +4818,6 @@ Resources:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylAdminSubscriberCountGetLambdaRole:
     Type: AWS::IAM::Role
-    DependsOn:
-      - GylSettingsTable
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -5032,10 +4863,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - dynamodb:GetItem
-                Resource:
-                  - !GetAtt
-                    - GylSettingsTable
-                    - Arn
+                Resource: !Ref GylSettingsTableArn
   GylAdminSubscriberCountGetLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -5740,24 +5568,18 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource: !GetAtt
-                  - GylSubscribersTable
-                  - Arn
+                Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource: !GetAtt
-                  - GylQueueTable
-                  - Arn
+                Resource: !Ref GylQueueTableArn
   GylReactToInteractionLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -5817,25 +5639,19 @@ Resources:
                 Resource:
                   - !Join
                     - ''
-                    - - !GetAtt
-                        - GylSubscribersTable
-                        - Arn
+                    - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -
                 Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
-                Resource: !GetAtt
-                  - GylSubscribersTable
-                  - Arn
+                Resource: !Ref GylSubscribersTableArn
               - 
                 Effect: Allow
                 Action:
                   - dynamodb:Query
                   - dynamodb:BatchWriteItem
-                Resource: !GetAtt
-                  - GylQueueTable
-                  - Arn
+                Resource: !Ref GylQueueTableArn
   GylReactToUnsubscribeEventLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -5870,93 +5686,6 @@ Resources:
             Ref: AWS::AccountId
           - ':'
           - GylUnsubscribeEventTopic
-
-  # DynamoDB Tables
-  GylSettingsTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        -
-          AttributeName: settingName
-          AttributeType: S
-      TableName: !Sub
-        - '${DbTablePrefix}Settings'
-        - 
-          DbTablePrefix: !Ref DbTablePrefix
-      KeySchema:
-        -
-          AttributeName: settingName
-          KeyType: HASH
-  GylQueueTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      TableName: !Sub
-        - '${DbTablePrefix}Queue'
-        - 
-          DbTablePrefix: !Ref DbTablePrefix
-      AttributeDefinitions:
-        -
-          AttributeName: queuePlacement
-          AttributeType: S
-        -
-          AttributeName: runAtModified
-          AttributeType: S
-        -
-          AttributeName: subscriberId
-          AttributeType: S
-      KeySchema:
-        -
-          AttributeName: queuePlacement
-          KeyType: HASH
-        -
-          AttributeName: runAtModified
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        -
-          IndexName: SubscriberIdIndex
-          KeySchema:
-            -
-              AttributeName: subscriberId
-              KeyType: HASH
-          Projection:
-            NonKeyAttributes:
-              - tagReason
-            ProjectionType: INCLUDE
-  GylSubscribersTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      BillingMode: PAY_PER_REQUEST
-      TableName: !Sub
-        - '${DbTablePrefix}Subscribers'
-        - 
-          DbTablePrefix: !Ref DbTablePrefix
-      AttributeDefinitions:
-        -
-          AttributeName: subscriberId
-          AttributeType: S
-        -
-          AttributeName: email
-          AttributeType: S
-      KeySchema:
-        -
-          AttributeName: subscriberId
-          KeyType: HASH
-      GlobalSecondaryIndexes:
-        -
-          IndexName: EmailToStatusIndex
-          KeySchema:
-            -
-              AttributeName: email
-              KeyType: HASH
-          Projection:
-            NonKeyAttributes:
-              - unsubscribed
-              - confirmed
-              - tags
-              - unsubscribeToken
-            ProjectionType: INCLUDE
 
   # SNS
   GylOpenAndClickTopic:
@@ -6002,8 +5731,22 @@ Outputs:
       - - !GetAtt
           - GylEC2Main
           - PublicDnsName
+  GylPublicApiUrl:
+    Description: 'GYL Public API Url'
+    Value: !Join
+      - ''
+      - - https://
+        -
+          Ref: GylPublicApi
+        - .execute-api.
+        -
+          Ref: AWS::Region
+        - .amazonaws.com/
+  GylPublicApiBetaStage:
+    Description: 'GYL Public API Stage'
+    Value: !Ref GylPublicApiBetaStage
   GylAdminApiUrl:
-    Description: 'GYL API Url'
+    Description: 'GYL Admin API Url'
     Value: !Join
       - ''
       - - https://
@@ -6014,7 +5757,7 @@ Outputs:
           Ref: AWS::Region
         - .amazonaws.com/
   GylAdminApiBetaStage:
-    Description: 'GYL API Stage'
+    Description: 'GYL Admin API Stage'
     Value: !Ref GylAdminApiBetaStage
   GylSesConfigurationSet:
     Description: GylSesConfigurationSet

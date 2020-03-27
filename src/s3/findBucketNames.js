@@ -1,4 +1,4 @@
-const Logger = require('../Logger')
+const Logger = require('../Logger');
 
 const escapeRegExp = str => {
 	return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -11,16 +11,31 @@ const findBucketNames = async (s3, startsWith) => {
 	const bucketListResponse = await s3.listBuckets({}).promise();
 	const Buckets = bucketListResponse.Buckets;
 	if (!Array.isArray(Buckets) || Buckets.length < 1) {
-		Logger.info('No buckets found to delete')
-		return []
+		return [];
 	}
-	const bucketNameRegex = new RegExp(
-		`^${escapeRegExp(startsWith)}[a-z0-9]{16}$`
-	);
+	const bucketNameRegex = new RegExp(`^${escapeRegExp(startsWith)}[a-z0-9]+$`);
 	const allMatchingBuckets = [];
 	for (let i = 0; i < Buckets.length; i++) {
 		if (bucketNameRegex.test(Buckets[i].Name)) {
-			allMatchingBuckets.push(Buckets[i].Name);
+			// Double check it looks like a valid bucket by checking it contains a
+			// GYL item.
+			try {
+				await s3
+					.getObject({
+						Bucket: Buckets[i].Name,
+						Key: 'gyl-admin-autoresponder-delete-dist.zip',
+					})
+					.promise();
+				allMatchingBuckets.push(Buckets[i].Name);
+			} catch (err) {
+				if (err.code === 'NoSuchKey') {
+					Logger.info(
+						`Bucket ${Buckets[i].Name} was not deleted because it does not seem to have GrowYourList content.`
+					);
+				} else {
+					throw err;
+				}
+			}
 		}
 	}
 	return allMatchingBuckets;

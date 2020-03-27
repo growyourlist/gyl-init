@@ -3,6 +3,7 @@ const AWS = getAWS()
 const Logger = require('../Logger')
 
 const StackName = "GrowYourList";
+const dbStackName = 'GrowYourListDb';
 
 const deleteCloudFormationStack = async () => {
 	const cloudFormation = new AWS.CloudFormation()
@@ -10,7 +11,9 @@ const deleteCloudFormationStack = async () => {
 	+ `take several minutes...`)
 	await cloudFormation.deleteStack({ StackName }).promise()
 	await cloudFormation.waitFor('stackDeleteComplete', { StackName }).promise()
-	Logger.info(`CloudFormation stack ${StackName} deleted`)
+	await cloudFormation.deleteStack({ StackName: dbStackName }).promise()
+	await cloudFormation.waitFor('stackDeleteComplete', { StackName: dbStackName }).promise()
+	Logger.info(`CloudFormation stack ${dbStackName} deleted`)
 }
 
 module.exports = deleteCloudFormationStack

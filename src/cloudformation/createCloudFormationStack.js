@@ -6,6 +6,7 @@ const Logger = require('../Logger');
 const { GylEc2MainKeyName } = require('../common/resourceNames');
 const { GylVersion } = require('../GylVersion');
 
+const dbStackName = 'GrowYourListDb';
 const StackName = 'GrowYourList';
 
 const createCloudFormationStack = async params => {
@@ -20,53 +21,116 @@ const createCloudFormationStack = async params => {
 		BroadcastUser,
 		AdminEmail,
 	} = params;
-	Logger.info('Uploading CloudFormation template to bucket');
-	await s3
-		.putObject({
-			Bucket: LambdaBucketName,
-			Key: 'gyl-template.yaml',
-			ContentType: 'application/x-yaml',
-			Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml')),
-		})
-		.promise();
+	Logger.info('Uploading CloudFormation templates to bucket');
+	await Promise.all(
+		[
+			s3
+				.putObject({
+					Bucket: LambdaBucketName,
+					Key: 'gyl-template-db.yaml',
+					ContentType: 'application/x-yaml',
+					Body: fs.readFileSync(path.join(__dirname, 'gyl-template-db.yaml')),
+				})
+				.promise(),
+			s3
+				.putObject({
+					Bucket: LambdaBucketName,
+					Key: 'gyl-template.yaml',
+					ContentType: 'application/x-yaml',
+					Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml')),
+				})
+				.promise(),
+		]
+	)
 	Logger.log(
-		`Creating CloudFormation stack ${StackName}. This process can ` +
-			'take several minutes...'
+		'Creating CloudFormation stacks. This process can take several minutes...'
 	);
-	await cloudFormation
-		.validateTemplate({
-			TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template.yaml`,
-		})
-		.promise();
+	await Promise.all([
+		cloudFormation
+			.validateTemplate({
+				TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-db.yaml`,
+			})
+			.promise(),
+		cloudFormation
+			.validateTemplate({
+				TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template.yaml`,
+			})
+			.promise(),
+	]);
+
+	const dbOutputs = {};
+	try {
+		await cloudFormation
+			.createStack({
+				StackName: dbStackName,
+				TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-db.yaml`,
+				Parameters: [
+					{ ParameterKey: 'DbTablePrefix', ParameterValue: DbTablePrefix },
+				],
+			})
+			.promise();
+		const stackCreateCompleteResponse = await cloudFormation
+			.waitFor('stackCreateComplete', { StackName: dbStackName })
+			.promise();
+		Logger.info(`CloudFormation stack ${StackName} created`);
+		const stack = stackCreateCompleteResponse.Stacks[0];
+		stack.Outputs.forEach((output) => {
+			dbOutputs[output.Description] = output.OutputValue;
+		});
+	} catch (err) {
+		if (err.code === 'ResourceNotReady') {
+			console.error(
+				`Error: It seems the stack ${StackName} could not be ` +
+					'created. Please investigate the error online in AWS Console > ' +
+					'CloudFormation.'
+			);
+		}
+		throw err;
+	}
+
+	const mainStackParameters = [
+		{ ParameterKey: 'KeyName', ParameterValue: GylEc2MainKeyName },
+		{ ParameterKey: 'GylVersion', ParameterValue: GylVersion },
+		{ ParameterKey: 'LambdaBucketName', ParameterValue: LambdaBucketName },
+		{ ParameterKey: 'ApiAuthKeyHash', ParameterValue: ApiAuthKeyHash },
+		{ ParameterKey: 'DbTablePrefix', ParameterValue: DbTablePrefix },
+		{ ParameterKey: 'AdminEmail', ParameterValue: AdminEmail },
+		{ ParameterKey: 'SesSourceEmail', ParameterValue: SesSourceEmail },
+		{
+			ParameterKey: 'QueueUserAccessKeyId',
+			ParameterValue: QueueUser.accessKeyId,
+		},
+		{
+			ParameterKey: 'QueueUserSecretAccessKey',
+			ParameterValue: QueueUser.secretAccessKey,
+		},
+		{
+			ParameterKey: 'BroadcastUserAccessKeyId',
+			ParameterValue: BroadcastUser.accessKeyId,
+		},
+		{
+			ParameterKey: 'BroadcastUserSecretAccessKey',
+			ParameterValue: BroadcastUser.secretAccessKey,
+		},
+		{
+			ParameterKey: 'GylSettingsTableArn',
+			ParameterValue: dbOutputs['GylSettingsTableArn'],
+		},
+		{
+			ParameterKey: 'GylSubscribersTableArn',
+			ParameterValue: dbOutputs['GylSubscribersTableArn'],
+		},
+		{
+			ParameterKey: 'GylQueueTableArn',
+			ParameterValue: dbOutputs['GylQueueTableArn'],
+		},
+	];
+
 	await cloudFormation
 		.createStack({
 			StackName,
 			TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template.yaml`,
-			Parameters: [
-				{ ParameterKey: 'KeyName', ParameterValue: GylEc2MainKeyName },
-				{ ParameterKey: 'GylVersion', ParameterValue: GylVersion },
-				{ ParameterKey: 'LambdaBucketName', ParameterValue: LambdaBucketName },
-				{ ParameterKey: 'ApiAuthKeyHash', ParameterValue: ApiAuthKeyHash },
-				{ ParameterKey: 'DbTablePrefix', ParameterValue: DbTablePrefix },
-				{ ParameterKey: 'AdminEmail', ParameterValue: AdminEmail },
-				{ ParameterKey: 'SesSourceEmail', ParameterValue: SesSourceEmail },
-				{
-					ParameterKey: 'QueueUserAccessKeyId',
-					ParameterValue: QueueUser.accessKeyId,
-				},
-				{
-					ParameterKey: 'QueueUserSecretAccessKey',
-					ParameterValue: QueueUser.secretAccessKey,
-				},
-				{
-					ParameterKey: 'BroadcastUserAccessKeyId',
-					ParameterValue: BroadcastUser.accessKeyId,
-				},
-				{
-					ParameterKey: 'BroadcastUserSecretAccessKey',
-					ParameterValue: BroadcastUser.secretAccessKey,
-				},
-			],
+			Parameters: mainStackParameters,
 			Capabilities: ['CAPABILITY_IAM'],
 		})
 		.promise();
