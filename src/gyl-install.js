@@ -10,6 +10,7 @@ const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions');
 const createCloudFormationStack = require('./cloudformation/createCloudFormationStack');
 const populateDb = require('./dynamodb/populateDb');
 const getPostalAddress = require('./other/getPostalAddress');
+const setEnvironmentVars = require('./lambda/setEnvironmentVars');
 
 const createUsers = require('./iam/createUsers');
 
@@ -61,8 +62,10 @@ const init = async () => {
 		// done separately here.
 		await setSesEventDestinations(outputs);
 		await populateDb(DbTablePrefix, SesSourceEmail, footerAddress);
+		const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?email={{email}}`;
+		await setEnvironmentVars(unsubscribeLink);
 		Logger.log(`EC2 Hostname: ${outputs['EC2 Hostname']}`);
-		Logger.log(`GYL API URL: ${outputs['GYL API Url']}${outputs['GYL API Stage']}`);
+		Logger.log(`GYL API URL: ${outputs['GYL Admin API Url']}${outputs['GYL Admin API Stage']}`);
 		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`);
 	} catch (err) {
 		console.error(err);

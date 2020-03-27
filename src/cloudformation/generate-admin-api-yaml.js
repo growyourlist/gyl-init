@@ -634,6 +634,20 @@ const adminApiShorthand = {
         },
       },
     },
+    'Unsubscribe-Link': {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            permissions: [],
+          },
+          func: {
+            zipfile: 'gyl-admin-unsubscribe-link-get-dist.zip',
+            description: 'Gets the unsubscribe link',
+          },
+        },
+      },
+    },
   },
 };
 
