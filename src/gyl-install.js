@@ -9,6 +9,7 @@ const createKeyPair = require('./ec2/createKeyPair');
 const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions');
 const createCloudFormationStack = require('./cloudformation/createCloudFormationStack');
 const populateDb = require('./dynamodb/populateDb');
+const getPostalAddress = require('./other/getPostalAddress');
 
 const createUsers = require('./iam/createUsers');
 
@@ -41,6 +42,7 @@ const init = async () => {
 		await loadConfig();
 		const SesSourceEmail = await getSesSourceEmail();
 		const AdminEmail = await getAdminEmail();
+		const footerAddress = await getPostalAddress();
 		console.log('\n## Uploading GYL Software ##\n' +
 			'Thanks for entering the details, GYL will now be uploaded to your AWS ' +
 			'account. This can take some time.\n');
@@ -62,7 +64,7 @@ const init = async () => {
 		// Ses EventDestinations cannot be created in CloudFormation, so they're
 		// done separately here.
 		await setSesEventDestinations(outputs);
-		await populateDb(DbTablePrefix, SesSourceEmail);
+		await populateDb(DbTablePrefix, SesSourceEmail, footerAddress);
 		Logger.log(`EC2 Hostname: ${outputs['EC2 Hostname']}`);
 		Logger.log(`GYL API URL: ${outputs['GYL API Url']}${outputs['GYL API Stage']}`);
 		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`);

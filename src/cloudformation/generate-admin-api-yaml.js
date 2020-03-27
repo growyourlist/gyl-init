@@ -196,7 +196,28 @@ const adminApiShorthand = {
           },
           func: {
             zipfile: 'gyl-admin-lists-get-dist.zip',
-            description: 'Posts a info about a new list',
+            description: 'Gets the list of mailing lists',
+            env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
+          },
+        },
+      },
+    },
+    'Postal-Address': {
+      _methods: {
+        GET: {
+          useAuthorizer: true,
+          role: {
+            dependsOn: ['GylSettingsTable'],
+            permissions: [
+              {
+                actions: ['dynamodb:GetItem'],
+                resourceName: 'GylSettingsTable',
+              },
+            ],
+          },
+          func: {
+            zipfile: 'gyl-admin-postal-address-get-dist.zip',
+            description: '',
             env: { DB_TABLE_PREFIX: '!Ref DbTablePrefix' },
           },
         },

@@ -1,6 +1,6 @@
 const getAWS = require('../getAWS')
 
-const populateDb = async (dbTablePrefix, sourceEmail) => {
+const populateDb = async (dbTablePrefix, sourceEmail, postalAddress) => {
 	const AWS = getAWS()
 	const dyanmodb = new AWS.DynamoDB.DocumentClient();
 	await dyanmodb.put({
@@ -15,7 +15,14 @@ const populateDb = async (dbTablePrefix, sourceEmail) => {
 				}
 			]
 		}
-	}).promise()
+	}).promise();
+	await dyanmodb.put({
+		TableName: `${dbTablePrefix}Settings`,
+		Item: {
+			settingName: 'postalAddress',
+			value: postalAddress,
+		}
+	}).promise();
 }
 
 module.exports = populateDb
