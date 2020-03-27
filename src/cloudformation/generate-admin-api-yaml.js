@@ -1094,7 +1094,8 @@ let generatedAdminApiBeginPattern = /### BEGIN ADMIN API GENERATED PART/;
 let generatedAdminApiEndPattern = /### END ADMIN API GENERATED PART/;
 let generatedPublicApiBeginPattern = /### BEGIN PUBLIC API GENERATED PART/;
 let generatedPublicApiEndPattern = /### END PUBLIC API GENERATED PART/;
-readFileSync(join(__dirname, 'gyl-template.yaml'))
+
+readFileSync(join(__dirname, 'gyl-template-admin-api.yaml'))
   .toString('utf8')
   .split('\n')
   .forEach(line => {
@@ -1107,7 +1108,21 @@ readFileSync(join(__dirname, 'gyl-template.yaml'))
     } else if (generatedAdminApiEndPattern.test(line)) {
       newTemplate += line + '\n';
       inGeneratedContent = false;
-    } else if (generatedPublicApiBeginPattern.test(line)) {
+    }
+  });
+writeFileSync(
+  join(__dirname, 'gyl-template-admin-api-new.yaml'),
+  newTemplate.trimRight() + '\n'
+);
+
+readFileSync(join(__dirname, 'gyl-template.yaml'))
+  .toString('utf8')
+  .split('\n')
+  .forEach(line => {
+    if (!inGeneratedContent) {
+      newTemplate += line + '\n';
+    }
+    if (generatedPublicApiBeginPattern.test(line)) {
       inGeneratedContent = true;
       newTemplate += publicApiYaml;
     } else if (generatedPublicApiEndPattern.test(line)) {

@@ -40,6 +40,14 @@ const createCloudFormationStack = async params => {
 					Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml')),
 				})
 				.promise(),
+			s3
+				.putObject({
+					Bucket: LambdaBucketName,
+					Key: 'gyl-template-admin-api.yaml',
+					ContentType: 'application/x-yaml',
+					Body: fs.readFileSync(path.join(__dirname, 'gyl-template-admin-api.yaml')),
+				})
+				.promise(),
 		]
 	)
 	Logger.log(
@@ -54,6 +62,11 @@ const createCloudFormationStack = async params => {
 		cloudFormation
 			.validateTemplate({
 				TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template.yaml`,
+			})
+			.promise(),
+		cloudFormation
+			.validateTemplate({
+				TemplateURL: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-admin-api.yaml`,
 			})
 			.promise(),
 	]);
@@ -123,6 +136,10 @@ const createCloudFormationStack = async params => {
 		{
 			ParameterKey: 'GylQueueTableArn',
 			ParameterValue: dbOutputs['GylQueueTableArn'],
+		},
+		{
+			ParameterKey: 'GylAdminApiStackTemplateUrl',
+			ParameterValue: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-admin-api.yaml`
 		},
 	];
 
