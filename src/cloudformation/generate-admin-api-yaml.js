@@ -703,8 +703,7 @@ const publicApiShorthand = {
     -
       Ref: AWS::Region
     - .amazonaws.com/
-    -
-      Ref: GylPublicApiBetaStage`,
+    - beta`,
               GLOBAL_UNSUBSCRIBE_URL: 'https://www.growyourlist.com/unsubscribe/',
               DB_TABLE_PREFIX: '!Ref DbTablePrefix',
             },
@@ -1088,7 +1087,8 @@ const generateYaml = (def, apiBaseId, parentInfo = { name: '' }) => {
 const adminApiYaml = generateYaml(adminApiShorthand, 'GylAdminApi');
 const publicApiYaml = generateYaml(publicApiShorthand, 'GylPublicApi');
 
-let newTemplate = '';
+let newAdminTemplate = '';
+let newMainTemplate = '';
 let inGeneratedContent = false;
 let generatedAdminApiBeginPattern = /### BEGIN ADMIN API GENERATED PART/;
 let generatedAdminApiEndPattern = /### END ADMIN API GENERATED PART/;
@@ -1100,19 +1100,19 @@ readFileSync(join(__dirname, 'gyl-template-admin-api.yaml'))
   .split('\n')
   .forEach(line => {
     if (!inGeneratedContent) {
-      newTemplate += line + '\n';
+      newAdminTemplate += line + '\n';
     }
     if (generatedAdminApiBeginPattern.test(line)) {
       inGeneratedContent = true;
-      newTemplate += adminApiYaml;
+      newAdminTemplate += adminApiYaml;
     } else if (generatedAdminApiEndPattern.test(line)) {
-      newTemplate += line + '\n';
+      newAdminTemplate += line + '\n';
       inGeneratedContent = false;
     }
   });
 writeFileSync(
   join(__dirname, 'gyl-template-admin-api-new.yaml'),
-  newTemplate.trimRight() + '\n'
+  newAdminTemplate.trimRight() + '\n'
 );
 
 readFileSync(join(__dirname, 'gyl-template.yaml'))
@@ -1120,17 +1120,17 @@ readFileSync(join(__dirname, 'gyl-template.yaml'))
   .split('\n')
   .forEach(line => {
     if (!inGeneratedContent) {
-      newTemplate += line + '\n';
+      newMainTemplate += line + '\n';
     }
     if (generatedPublicApiBeginPattern.test(line)) {
       inGeneratedContent = true;
-      newTemplate += publicApiYaml;
+      newMainTemplate += publicApiYaml;
     } else if (generatedPublicApiEndPattern.test(line)) {
-      newTemplate += line + '\n';
+      newMainTemplate += line + '\n';
       inGeneratedContent = false;
     }
   });
 writeFileSync(
   join(__dirname, 'gyl-template-new.yaml'),
-  newTemplate.trimRight() + '\n'
+  newMainTemplate.trimRight() + '\n'
 );

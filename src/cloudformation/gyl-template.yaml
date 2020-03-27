@@ -650,7 +650,8 @@ Resources:
               -
                 Ref: AWS::Region
               - .amazonaws.com/
-              - beta
+              -
+                Ref: GylPublicApiBetaStage
           GLOBAL_UNSUBSCRIBE_URL: https://www.growyourlist.com/unsubscribe/
           DB_TABLE_PREFIX: !Ref DbTablePrefix
   GylSubscriberUnsubscribeGetPermission:
