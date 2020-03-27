@@ -35,10 +35,6 @@ const init = async () => {
 		console.log('\n### WELCOME TO GROW YOUR LIST (GYL) ###\n\n' +
 		'This program will take you through the process of getting set up. ' +
 		'It can take some time and requires some details from you.')
-		if (!process.env.AWS_ACCESS_KEY_ID) {
-			console.log('You will need an access key for an admin user, see: '
-			+ 'https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html')
-		}
 		await loadConfig();
 		const SesSourceEmail = await getSesSourceEmail();
 		const AdminEmail = await getAdminEmail();
