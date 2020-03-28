@@ -62,7 +62,7 @@ const init = async () => {
 		// done separately here.
 		await setSesEventDestinations(outputs);
 		await populateDb(DbTablePrefix, SesSourceEmail, footerAddress);
-		const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?email={{email}}`;
+		const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?id={{subscriberId}}`;
 		await setEnvironmentVars(unsubscribeLink);
 		Logger.log(`EC2 Hostname: ${outputs['EC2 Hostname']}`);
 		Logger.log(`GYL API URL: ${outputs['GYL Admin API Url']}${outputs['GYL Admin API Stage']}`);

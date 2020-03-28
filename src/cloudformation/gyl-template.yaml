@@ -610,16 +610,8 @@ Resources:
               -
                 Effect: Allow
                 Action:
-                  - dynamodb:Query
-                Resource:
-                  - !Join
-                    - ''
-                    - - !Ref GylSubscribersTableArn
-                      - /index/EmailToStatusIndex
-              -
-                Effect: Allow
-                Action:
                   - dynamodb:UpdateItem
+                  - dynamodb:GetItem
                 Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow

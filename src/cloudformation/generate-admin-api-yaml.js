@@ -690,12 +690,7 @@ const publicApiShorthand = {
           role: {
             permissions: [
               {
-                actions: ['dynamodb:Query'],
-                resource: '!Ref GylSubscribersTableArn',
-                resourceNameSuffix: '/index/EmailToStatusIndex',
-              },
-              {
-                actions: ['dynamodb:UpdateItem'],
+                actions: ['dynamodb:UpdateItem', 'dynamodb:GetItem'],
                 resource: '!Ref GylSubscribersTableArn',
               },
               {
