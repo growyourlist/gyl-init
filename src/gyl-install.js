@@ -29,7 +29,9 @@ const generateTablePrefix = async () => {
 	return `Gyl_`;
 };
 
-const hash = async input => await bcrypt.hash(input, 10);
+const hash = async input => {
+	return await bcrypt.hash(input, 10);
+}
 
 const init = async () => {
 	try {
