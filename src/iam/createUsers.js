@@ -1,11 +1,11 @@
 const getAWS = require('../getAWS');
 const Logger = require('../Logger');
-const region = process.env.AWS_REGION;
-const accountId = process.env.AWS_ACCOUNT_ID;
-
-
 
 const createUsers = async dbTablePrefix => {
+
+	const region = process.env.AWS_REGION;
+	const accountId = process.env.AWS_ACCOUNT_ID;
+
 	const AWS = getAWS();
 	const iam = new AWS.IAM();
 
