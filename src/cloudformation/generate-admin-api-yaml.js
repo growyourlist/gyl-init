@@ -713,7 +713,7 @@ const publicApiShorthand = {
       Ref: AWS::Region
     - .amazonaws.com/
     - beta`,
-              GLOBAL_UNSUBSCRIBE_URL: 'https://www.growyourlist.com/unsubscribe/',
+              GLOBAL_UNSUBSCRIBE_URL: 'https://unsubscribe.growyourlist.com/',
               DB_TABLE_PREFIX: '!Ref DbTablePrefix',
             },
           },
