@@ -3,7 +3,7 @@ const path = require('path');
 const getAWS = require('../getAWS');
 const AWS = getAWS();
 const Logger = require('../Logger');
-const { GylEc2MainKeyName } = require('../common/resourceNames');
+const { GylMainEc2KeyName } = require('../common/resourceNames');
 const { GylVersion } = require('../GylVersion');
 
 const dbStackName = 'GrowYourListDb';
@@ -20,6 +20,7 @@ const createCloudFormationStack = async params => {
 		QueueUser,
 		BroadcastUser,
 		AdminEmail,
+		Ec2InstanceType,
 	} = params;
 	Logger.info('Uploading CloudFormation templates to bucket');
 	await Promise.all(
@@ -102,7 +103,8 @@ const createCloudFormationStack = async params => {
 	}
 
 	const mainStackParameters = [
-		{ ParameterKey: 'KeyName', ParameterValue: GylEc2MainKeyName },
+		{ ParameterKey: 'GylEc2InstanceType', ParameterValue: Ec2InstanceType },
+		{ ParameterKey: 'GylKeyName', ParameterValue: GylMainEc2KeyName },
 		{ ParameterKey: 'GylVersion', ParameterValue: GylVersion },
 		{ ParameterKey: 'LambdaBucketName', ParameterValue: LambdaBucketName },
 		{ ParameterKey: 'ApiAuthKeyHash', ParameterValue: ApiAuthKeyHash },

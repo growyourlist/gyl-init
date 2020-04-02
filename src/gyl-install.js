@@ -11,6 +11,7 @@ const createCloudFormationStack = require('./cloudformation/createCloudFormation
 const populateDb = require('./dynamodb/populateDb');
 const getPostalAddress = require('./other/getPostalAddress');
 const setEnvironmentVars = require('./lambda/setEnvironmentVars');
+const getEc2InstanceType = require('./ec2/getEc2InstaceType');
 
 const createUsers = require('./iam/createUsers');
 
@@ -41,6 +42,7 @@ const init = async () => {
 		await loadConfig();
 		const SesSourceEmail = await getSesSourceEmail();
 		const AdminEmail = await getAdminEmail();
+		const Ec2InstanceType = await getEc2InstanceType();
 		const footerAddress = await getPostalAddress();
 		console.log('\n## Uploading GYL Software ##\n' +
 			'Thanks for entering the details, GYL will now be uploaded to your AWS ' +
@@ -53,6 +55,7 @@ const init = async () => {
 		const LambdaBucketName = await uploadLambdaFunctions();
 		const outputs = await createCloudFormationStack({
 			LambdaBucketName,
+			Ec2InstanceType,
 			ApiAuthKeyHash,
 			DbTablePrefix,
 			SesSourceEmail,

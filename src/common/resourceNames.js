@@ -1,3 +1,3 @@
 module.exports = {
-	GylEc2MainKeyName: 'GylEc2MainKey'
+	GylMainEc2KeyName: 'GylMainEc2Key'
 }

@@ -3,15 +3,15 @@ const path = require('path')
 const getAWS = require('../getAWS')
 const AWS = getAWS()
 const Logger = require('../Logger')
-const { GylEc2MainKeyName } = require('../common/resourceNames')
+const { GylMainEc2KeyName } = require('../common/resourceNames')
 
 const createKeyPair = async () => {
 	const ec2 = new AWS.EC2()
-	const KeyName = GylEc2MainKeyName
+	const GylKeyName = GylMainEc2KeyName
 	let keyAlreadyExists = false
-	Logger.info(`Creating key pair ${KeyName}...`)
+	Logger.info(`Creating key pair ${GylKeyName}...`)
 	await new Promise(
-		(resolve, reject) => ec2.createKeyPair({KeyName}, (err, data) => {
+		(resolve, reject) => ec2.createKeyPair({KeyName: GylKeyName}, (err, data) => {
 			const gotKeyExistsError = err && (err.code === 'InvalidKeyPair.Duplicate')
 			if (err && !gotKeyExistsError) {
 				reject(err)
@@ -19,14 +19,14 @@ const createKeyPair = async () => {
 			}
 			if (gotKeyExistsError) {
 				keyAlreadyExists = true
-				Logger.info(`Key pair ${KeyName} already exists. If you have lost the `
+				Logger.info(`Key pair ${GylKeyName} already exists. If you have lost the `
 					+ 'key file, you may need to re-create the stack.')
 				resolve(data)
 				return
 			}
-			const keyPath = path.resolve(`${KeyName}.pem`)
+			const keyPath = path.resolve(`${GylKeyName}.pem`)
 			fs.writeFileSync(keyPath, data.KeyMaterial)
-			Logger.log(`Saved key in file: ./${KeyName}.pem`)
+			Logger.log(`Saved key in file: ./${GylKeyName}.pem`)
 			Logger.log(
 				'This key is used when connecting to your GrowYourList EC2 instance'
 			)
@@ -35,13 +35,13 @@ const createKeyPair = async () => {
 	);
 
 	return new Promise((resolve, reject) => {
-		ec2.waitFor('keyPairExists', {KeyNames: [KeyName]}, (err, data) => {
+		ec2.waitFor('keyPairExists', {KeyNames: [GylKeyName]}, (err, data) => {
 			if (err) {
 				reject(err)
 				return
 			}
 			if (!keyAlreadyExists) {
-				Logger.info(`Key pair ${KeyName} created`)
+				Logger.info(`Key pair ${GylKeyName} created`)
 			}
 			resolve(data)
 		})
