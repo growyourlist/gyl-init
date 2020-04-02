@@ -653,6 +653,46 @@ const adminApiShorthand = {
 
 const publicApiShorthand = {
   Subscriber: {
+    _methods: {
+      POST: {
+        useAuthorizer: false,
+        role: {
+          permissions: [
+            {
+              actions: ['dynamodb:Query'],
+              resource: '!Ref GylSubscribersTableArn',
+              resourceNameSuffix: '/index/EmailToStatusIndex',
+            },
+            {
+              actions: ['dynamodb:PutItem','dynamodb:UpdateItem'],
+              resource: '!Ref GylSubscribersTableArn',
+            },
+            {
+              actions: ['ses:SendEmail'],
+              resource: '*',
+            },
+          ],
+        },
+        func: {
+          zipfile: 'gyl-public-subscriber-post-dist.zip',
+          description: 'Posts a subscriber from a public location and sends confirmation email',
+          env: {
+            DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+            PUBLIC_API: `!Join
+  - ''
+  - - https://
+    -
+      Ref: GylPublicApi
+    - .execute-api.
+    -
+      Ref: AWS::Region
+    - .amazonaws.com/
+    - beta`,
+            SOURCE_EMAIL: '!Ref SesSourceEmail'
+          }
+        },
+      },
+    },
     Confirm: {
       _methods: {
         GET: {
