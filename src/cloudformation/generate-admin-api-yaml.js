@@ -688,7 +688,8 @@ const publicApiShorthand = {
       Ref: AWS::Region
     - .amazonaws.com/
     - beta`,
-            SOURCE_EMAIL: '!Ref SesSourceEmail'
+            SOURCE_EMAIL: '!Ref SesSourceEmail',
+            DEFAULT_LIST: 'list-default'
           }
         },
       },
