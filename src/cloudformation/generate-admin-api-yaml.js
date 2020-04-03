@@ -664,7 +664,7 @@ const publicApiShorthand = {
               resourceNameSuffix: '/index/EmailToStatusIndex',
             },
             {
-              actions: ['dynamodb:PutItem','dynamodb:UpdateItem'],
+              actions: ['dynamodb:PutItem','dynamodb:UpdateItem','dynamodb:GetItem'],
               resource: '!Ref GylSubscribersTableArn',
             },
             {
@@ -718,6 +718,7 @@ const publicApiShorthand = {
             description: 'Confirms a subscriber in response to link click',
             env: {
               DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+              THANKYOU_URL: 'https://www.growyourlist.com/thank-you.html',
             },
           },
         },

@@ -618,6 +618,7 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:UpdateItem
+                  - dynamodb:GetItem
                 Resource: !Ref GylSubscribersTableArn
               -
                 Effect: Allow
@@ -826,6 +827,7 @@ Resources:
       Environment:
         Variables:
           DB_TABLE_PREFIX: !Ref DbTablePrefix
+          THANKYOU_URL: https://www.growyourlist.com/thank-you.html
   GylSubscriberConfirmGetPermission:
     Type: AWS::Lambda::Permission
     Properties:
