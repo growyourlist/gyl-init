@@ -1,27 +1,26 @@
 {
-  "name": "gyl-init",
-  "description": "Initialises a new version of GrowYourList or destructs it.",
-  "version": "0.0.7",
-  "license": "MIT",
-  "main": "src/index",
-  "devDependencies": {
-    "archiver": "^3.1.1",
-    "eslint": "^6.8.0"
-  },
-  "scripts": {
-    "setup": "node src/gyl-install",
-    "destruct": "node src/gyl-uninstall",
-    "hash": "node src/hash-key-cli"
-  },
-  "dependencies": {
-    "adm-zip": "^0.4.13",
-    "aws-sdk": "^2.553.0",
-    "bcrypt": "^4.0.1",
-    "dotenv": "^8.2.0",
-    "read": "^1.0.7",
-    "request": "^2.88.0",
-    "request-promise-native": "^1.0.8",
-    "rimraf": "^3.0.1",
-    "write-all-for-dynamodb": "^0.0.3"
-  }
+	"name": "gyl-init",
+	"description": "Initialises a new version of GrowYourList or destructs it.",
+	"version": "0.0.8",
+	"license": "MIT",
+	"main": "src/index",
+	"devDependencies": {
+		"eslint": "^7.6.0"
+	},
+	"scripts": {
+		"setup": "node src/gyl-install",
+		"destruct": "node src/gyl-uninstall",
+		"hash": "node src/hash-key-cli"
+	},
+	"dependencies": {
+		"adm-zip": "^0.4.16",
+		"aws-sdk": "^2.727.1",
+		"bcrypt": "^5.0.0",
+		"dotenv": "^8.2.0",
+		"read": "^1.0.7",
+		"request": "^2.88.0",
+		"request-promise-native": "^1.0.9",
+		"rimraf": "^3.0.1",
+		"write-all-for-dynamodb": "^0.0.3"
+	}
 }
