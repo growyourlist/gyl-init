@@ -1,8 +1,10 @@
-const Logger = require("../Logger");
-const getAllBucketObjects = require('./getAllBucketObjects')
-const deleteAllBucketObjects = require('./deleteAllBucketObjects')
+const AWS = require('../getAWS')();
+const Logger = require('../Logger');
+const getAllBucketObjects = require('./getAllBucketObjects');
+const deleteAllBucketObjects = require('./deleteAllBucketObjects');
 
-const deleteBuckets = async (s3, BucketNames) => {
+const deleteBuckets = async (BucketNames) => {
+	const s3 = new AWS.S3();
 	for (let i = 0; i < BucketNames.length; i++) {
 		const Bucket = BucketNames[i];
 
@@ -17,16 +19,14 @@ const deleteBuckets = async (s3, BucketNames) => {
 				await deleteAllBucketObjects(s3, Bucket, BucketObjects);
 			}
 			await s3.deleteBucket({ Bucket }).promise();
-		}
-		catch (err) {
+		} catch (err) {
 			if (err.code === 'NoSuchBucket') {
-				console.warn(`Bucket not found: ${Bucket}`)
-			}
-			else {
-				throw err
+				console.warn(`Bucket not found: ${Bucket}`);
+			} else {
+				throw err;
 			}
 		}
 	}
-}
+};
 
 module.exports = deleteBuckets;

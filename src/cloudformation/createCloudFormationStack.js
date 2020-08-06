@@ -9,7 +9,7 @@ const { GylVersion } = require('../GylVersion');
 const dbStackName = 'GrowYourListDb';
 const StackName = 'GrowYourList';
 
-const createCloudFormationStack = async params => {
+const createCloudFormationStack = async (params) => {
 	const cloudFormation = new AWS.CloudFormation();
 	const s3 = new AWS.S3();
 	const {
@@ -23,34 +23,34 @@ const createCloudFormationStack = async params => {
 		Ec2InstanceType,
 	} = params;
 	Logger.info('Uploading CloudFormation templates to bucket');
-	await Promise.all(
-		[
-			s3
-				.putObject({
-					Bucket: LambdaBucketName,
-					Key: 'gyl-template-db.yaml',
-					ContentType: 'application/x-yaml',
-					Body: fs.readFileSync(path.join(__dirname, 'gyl-template-db.yaml')),
-				})
-				.promise(),
-			s3
-				.putObject({
-					Bucket: LambdaBucketName,
-					Key: 'gyl-template.yaml',
-					ContentType: 'application/x-yaml',
-					Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml')),
-				})
-				.promise(),
-			s3
-				.putObject({
-					Bucket: LambdaBucketName,
-					Key: 'gyl-template-admin-api.yaml',
-					ContentType: 'application/x-yaml',
-					Body: fs.readFileSync(path.join(__dirname, 'gyl-template-admin-api.yaml')),
-				})
-				.promise(),
-		]
-	)
+	await Promise.all([
+		s3
+			.putObject({
+				Bucket: LambdaBucketName,
+				Key: 'gyl-template-db.yaml',
+				ContentType: 'application/x-yaml',
+				Body: fs.readFileSync(path.join(__dirname, 'gyl-template-db.yaml')),
+			})
+			.promise(),
+		s3
+			.putObject({
+				Bucket: LambdaBucketName,
+				Key: 'gyl-template.yaml',
+				ContentType: 'application/x-yaml',
+				Body: fs.readFileSync(path.join(__dirname, 'gyl-template.yaml')),
+			})
+			.promise(),
+		s3
+			.putObject({
+				Bucket: LambdaBucketName,
+				Key: 'gyl-template-admin-api.yaml',
+				ContentType: 'application/x-yaml',
+				Body: fs.readFileSync(
+					path.join(__dirname, 'gyl-template-admin-api.yaml')
+				),
+			})
+			.promise(),
+	]);
 	Logger.log(
 		'Creating CloudFormation stacks. This process can take several minutes...'
 	);
@@ -74,6 +74,7 @@ const createCloudFormationStack = async params => {
 
 	const dbOutputs = {};
 	try {
+		Logger.info(`  Creating ${dbStackName} stack...`);
 		await cloudFormation
 			.createStack({
 				StackName: dbStackName,
@@ -86,7 +87,7 @@ const createCloudFormationStack = async params => {
 		const stackCreateCompleteResponse = await cloudFormation
 			.waitFor('stackCreateComplete', { StackName: dbStackName })
 			.promise();
-		Logger.info(`CloudFormation stack ${StackName} created`);
+		Logger.info(`  CloudFormation stack ${dbStackName} created`);
 		const stack = stackCreateCompleteResponse.Stacks[0];
 		stack.Outputs.forEach((output) => {
 			dbOutputs[output.Description] = output.OutputValue;
@@ -94,7 +95,7 @@ const createCloudFormationStack = async params => {
 	} catch (err) {
 		if (err.code === 'ResourceNotReady') {
 			console.error(
-				`Error: It seems the stack ${StackName} could not be ` +
+				`Error: It seems the stack ${dbStackName} could not be ` +
 					'created. Please investigate the error online in AWS Console > ' +
 					'CloudFormation.'
 			);
@@ -141,10 +142,11 @@ const createCloudFormationStack = async params => {
 		},
 		{
 			ParameterKey: 'GylAdminApiStackTemplateUrl',
-			ParameterValue: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-admin-api.yaml`
+			ParameterValue: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-admin-api.yaml`,
 		},
 	];
 
+	Logger.info(`  Creating ${StackName} stack...`);
 	await cloudFormation
 		.createStack({
 			StackName,
@@ -158,7 +160,7 @@ const createCloudFormationStack = async params => {
 		const stackCreateCompleteResponse = await cloudFormation
 			.waitFor('stackCreateComplete', { StackName })
 			.promise();
-		Logger.info(`CloudFormation stack ${StackName} created`);
+		Logger.info(`  CloudFormation stack ${StackName} created`);
 		const outputs = {};
 		const stack = stackCreateCompleteResponse.Stacks[0];
 		stack.Outputs.forEach((output) => {

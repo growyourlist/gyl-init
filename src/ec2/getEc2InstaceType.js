@@ -236,7 +236,9 @@ const types = [
 	'i3en.metal',
 ];
 
-const getEc2InstanceType = async () => {
+const getEc2InstanceType = async (opts = {}) => {
+	const currentValue = opts.currentValue || '';
+
 	if (process.env.GYL_EC2_INSTANCE_TYPE) {
 		return process.env.GYL_EC2_INSTANCE_TYPE;
 	}
@@ -248,15 +250,22 @@ const getEc2InstanceType = async () => {
 			output: process.stdout,
 		});
 		do {
-			type = await new Promise(resolve => {
+			type = await new Promise((resolve) => {
 				rl.question(
-					"Enter the EC2 instance type; e.g. t2.micro ['c' to cancel setup, 's' to show all types (there are lots)]: ",
-					result => {
+					`  Enter the EC2 instance type; e.g. t2.micro ['c' to cancel setup, 's' to show all types (there are lots)]: `,
+					(result) => {
 						resolve(result);
 					}
 				);
 			});
-		} while (!type && (type !== 'c') && (type !== 's') && (types.indexOf(type) < 0));
+		} while (
+			!currentValue &&
+			!type &&
+			!type &&
+			type !== 'c' &&
+			type !== 's' &&
+			types.indexOf(type) < 0
+		);
 		rl.close();
 		if (type === 'c') {
 			process.exit();
@@ -271,11 +280,16 @@ const getEc2InstanceType = async () => {
 	console.log(
 		'\n## Set GYL EC2 Instance Type ##\n' +
 			'This is the size of the EC2 that will power your list. t2.micro is ' +
-			'smallest and typically eligible for AWS\'s free tier.'
+			"smallest and typically eligible for AWS's free tier."
 	);
-	
-	const email = await askForType();
-	return email.trim();
+	if (currentValue) {
+		console.log(
+			`Leave field blank to keep the EC2 instance type: "${currentValue}"`
+		);
+	}
+	const instanceTypeInput = (await askForType({ currentValue })).trim();
+	const instanceType = instanceTypeInput || currentValue;
+	return instanceType;
 };
 
 module.exports = getEc2InstanceType;

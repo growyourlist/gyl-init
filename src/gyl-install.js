@@ -30,23 +30,27 @@ const generateTablePrefix = async () => {
 	return `Gyl_`;
 };
 
-const hash = async input => {
+const hash = async (input) => {
 	return await bcrypt.hash(input, 10);
-}
+};
 
 const init = async () => {
 	try {
-		console.log('\n### WELCOME TO GROW YOUR LIST (GYL) ###\n\n' +
-		'This program will take you through the process of getting set up. ' +
-		'It can take some time and requires some details from you.')
+		console.log(
+			'\n### WELCOME TO GROW YOUR LIST (GYL) ###\n\n' +
+				'This program will take you through the process of getting set up. ' +
+				'It can take some time and requires some details from you.'
+		);
 		await loadConfig();
 		const SesSourceEmail = await getSesSourceEmail();
 		const AdminEmail = await getAdminEmail();
 		const Ec2InstanceType = await getEc2InstanceType();
 		const footerAddress = await getPostalAddress();
-		console.log('\n## Uploading GYL Software ##\n' +
-			'Thanks for entering the details, GYL will now be uploaded to your AWS ' +
-			'account. This can take some time.\n');
+		console.log(
+			'\n## Uploading GYL Software ##\n' +
+				'Thanks for entering the details, GYL will now be uploaded to your AWS ' +
+				'account. This can take some time.\n'
+		);
 		const DbTablePrefix = await generateTablePrefix();
 		const users = await createUsers(DbTablePrefix);
 		await createKeyPair();
@@ -70,7 +74,9 @@ const init = async () => {
 		const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?id={{subscriberId}}`;
 		await setEnvironmentVars(unsubscribeLink);
 		Logger.log(`EC2 Hostname: ${outputs['EC2 Hostname']}`);
-		Logger.log(`GYL API URL: ${outputs['GYL Admin API Url']}${outputs['GYL Admin API Stage']}`);
+		Logger.log(
+			`GYL API URL: ${outputs['GYL Admin API Url']}${outputs['GYL Admin API Stage']}`
+		);
 		Logger.log(`GYL API Auth Key: ${ApiAuthKey}`);
 	} catch (err) {
 		console.error(err);
