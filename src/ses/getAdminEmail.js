@@ -43,7 +43,7 @@ const getAdminEmail = async (opts = {}) => {
 
 	const emailInput = (await askForEmail()).trim();
 	if (emailInput) {
-		console.log(`Check the inbox of "${email.trim()}" for a validation link.`);
+		console.log(`Check the inbox of "${emailInput}" for a validation link.`);
 	}
 	return emailInput || currentValue;
 };
