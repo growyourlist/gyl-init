@@ -4156,6 +4156,11 @@ Resources:
                   - ses:CreateTemplate
                   - ses:UpdateTemplate
                 Resource: '*'
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !Ref GylTemplateHistoryTableArn
   GylAdminTemplatePostLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -4169,6 +4174,9 @@ Resources:
         - GylAdminTemplatePostLambdaRole
         - Arn
       Runtime: nodejs12.x
+      Environment:
+        Variables:
+          DB_TABLE_PREFIX: !Ref DbTablePrefix
   GylAdminTemplatePostPermission:
     Type: AWS::Lambda::Permission
     Properties:
