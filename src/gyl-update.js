@@ -53,7 +53,7 @@ const doUpdate = async () => {
 		}
 		if (existingStackResponse.Stacks.length !== 1) {
 			throw new Error(
-				'More than 1 GrowYourList stack found. Not sure what to do.'
+				'More than 1 GrowYourList stack found. Update can currently only handle 1 GrowYourList stack.'
 			);
 		}
 		const existingStack = existingStackResponse.Stacks[0];
