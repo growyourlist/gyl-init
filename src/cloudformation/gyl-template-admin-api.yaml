@@ -474,6 +474,8 @@ Resources:
         - GylAdminAnalyticsGetLambdaRole
         - Arn
       Runtime: nodejs12.x
+      Timeout: 120
+      MemorySize: 1024
       Environment:
         Variables:
           DB_TABLE_PREFIX: !Ref DbTablePrefix
