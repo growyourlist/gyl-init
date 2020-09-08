@@ -10,16 +10,13 @@ Resources:
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        -
-          AttributeName: settingName
+        - AttributeName: settingName
           AttributeType: S
       TableName: !Sub
         - '${DbTablePrefix}Settings'
-        - 
-          DbTablePrefix: !Ref DbTablePrefix
+        - DbTablePrefix: !Ref DbTablePrefix
       KeySchema:
-        -
-          AttributeName: settingName
+        - AttributeName: settingName
           KeyType: HASH
   GylQueueTable:
     Type: AWS::DynamoDB::Table
@@ -27,31 +24,23 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       TableName: !Sub
         - '${DbTablePrefix}Queue'
-        - 
-          DbTablePrefix: !Ref DbTablePrefix
+        - DbTablePrefix: !Ref DbTablePrefix
       AttributeDefinitions:
-        -
-          AttributeName: queuePlacement
+        - AttributeName: queuePlacement
           AttributeType: S
-        -
-          AttributeName: runAtModified
+        - AttributeName: runAtModified
           AttributeType: S
-        -
-          AttributeName: subscriberId
+        - AttributeName: subscriberId
           AttributeType: S
       KeySchema:
-        -
-          AttributeName: queuePlacement
+        - AttributeName: queuePlacement
           KeyType: HASH
-        -
-          AttributeName: runAtModified
+        - AttributeName: runAtModified
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        -
-          IndexName: SubscriberIdIndex
+        - IndexName: SubscriberIdIndex
           KeySchema:
-            -
-              AttributeName: subscriberId
+            - AttributeName: subscriberId
               KeyType: HASH
           Projection:
             NonKeyAttributes:
@@ -63,25 +52,19 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       TableName: !Sub
         - '${DbTablePrefix}Subscribers'
-        - 
-          DbTablePrefix: !Ref DbTablePrefix
+        - DbTablePrefix: !Ref DbTablePrefix
       AttributeDefinitions:
-        -
-          AttributeName: subscriberId
+        - AttributeName: subscriberId
           AttributeType: S
-        -
-          AttributeName: email
+        - AttributeName: email
           AttributeType: S
       KeySchema:
-        -
-          AttributeName: subscriberId
+        - AttributeName: subscriberId
           KeyType: HASH
       GlobalSecondaryIndexes:
-        -
-          IndexName: EmailToStatusIndex
+        - IndexName: EmailToStatusIndex
           KeySchema:
-            -
-              AttributeName: email
+            - AttributeName: email
               KeyType: HASH
           Projection:
             NonKeyAttributes:
@@ -90,7 +73,41 @@ Resources:
               - tags
               - unsubscribeToken
             ProjectionType: INCLUDE
-            
+  GylAutoresponderHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}AutoresponderHistory'
+        - DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        - AttributeName: autoresponderName
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: autoresponderName
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+  GylTemplateHistoryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}TemplateHistory'
+        - DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        - AttributeName: templateName
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: templateName
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+
 Outputs:
   GylSettingsTable:
     Description: 'GylSettingsTableArn'
