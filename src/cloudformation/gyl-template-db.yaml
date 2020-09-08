@@ -124,3 +124,8 @@ Outputs:
     Value: !GetAtt
       - GylSubscribersTable
       - Arn
+  GylTemplateHistoryTable:
+    Description: 'GylTemplateHistoryTableArn'
+    Value: !GetAtt
+      - GylTemplateHistoryTable
+      - Arn

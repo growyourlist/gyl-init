@@ -41,6 +41,9 @@ Parameters:
   GylQueueTableArn:
     Description: Arn of the Queue DynamoDB table
     Type: String
+  GylTemplateHistoryTableArn:
+    Description: Arn of the Template History DynamoDB table
+    Type: String
   GylAdminApiStackTemplateUrl:
     Description: The url of the admin api stack.
     Type: String
@@ -48,49 +51,242 @@ Parameters:
     Description: The instance of the EC2 to use; e.g. t2.micro
     Type: String
     Default: t2.micro
-    AllowedValues: [t2.nano, t2.micro, t2.small, t2.medium, t2.large, 
-      t2.xlarge, t2.2xlarge, t3a.nano, t3a.micro, t3a.small, t3a.medium,
-      t3a.large, t3a.xlarge, t3a.2xlarge, t3.nano, t3.micro, t3.small,
-      t3.medium, t3.large, t3.xlarge, t3.2xlarge, m5ad.large, m5ad.xlarge,
-      m5ad.2xlarge, m5ad.4xlarge, m5ad.12xlarge, m5ad.24xlarge, m5a.large,
-      m5a.xlarge, m5a.2xlarge, m5a.4xlarge, m5a.8xlarge, m5a.12xlarge,
-      m5a.16xlarge, m5a.24xlarge, m5d.large, m5d.xlarge, m5d.2xlarge,
-      m5d.4xlarge, m5d.8xlarge, m5d.12xlarge, m5d.16xlarge, m5d.24xlarge,
-      m5d.metal, m5n.large, m5n.xlarge, m5n.2xlarge, m5n.4xlarge, m5n.8xlarge,
-      m5n.12xlarge, m5n.16xlarge, m5dn.large, m5dn.xlarge, m5dn.2xlarge,
-      m5dn.4xlarge, m5dn.8xlarge, m5dn.12xlarge, m5dn.16xlarge, m5n.24xlarge,
-      m5dn.24xlarge, r5n.large, r5n.xlarge, r5n.2xlarge, r5n.4xlarge,
-      r5n.8xlarge, r5n.12xlarge, r5n.16xlarge, r5dn.large, r5dn.xlarge,
-      r5dn.2xlarge, r5dn.4xlarge, r5dn.8xlarge, r5dn.12xlarge, r5dn.16xlarge,
-      r5n.24xlarge, r5dn.24xlarge, m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge,
-      m5.8xlarge, m5.12xlarge, m5.16xlarge, m5.24xlarge, m5.metal, m4.large,
-      m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge, m4.16xlarge, a1.medium,
-      a1.large, a1.xlarge, a1.2xlarge, a1.4xlarge, a1.metal, c5n.large,
-      c5n.xlarge, c5n.2xlarge, c5n.4xlarge, c5n.9xlarge, c5n.18xlarge,
-      c5n.metal, c5d.large, c5d.xlarge, c5d.2xlarge, c5d.4xlarge, c5d.9xlarge,
-      c5d.12xlarge, c5d.18xlarge, c5d.24xlarge, c5d.metal, c5.large, c5.xlarge,
-      c5.2xlarge, c5.4xlarge, c5.9xlarge, c5.12xlarge, c5.18xlarge, c5.24xlarge,
-      c5.metal, c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge,
-      f1.2xlarge, f1.4xlarge, f1.16xlarge, g2.2xlarge, g2.8xlarge, g3s.xlarge,
-      g3.4xlarge, g3.8xlarge, g3.16xlarge, g4dn.xlarge, g4dn.2xlarge,
-      g4dn.4xlarge, g4dn.8xlarge, g4dn.12xlarge, g4dn.16xlarge, p2.xlarge,
-      p2.8xlarge, p2.16xlarge, p3.2xlarge, p3.8xlarge, p3.16xlarge,
-      p3dn.24xlarge, inf1.xlarge, inf1.2xlarge, inf1.6xlarge, inf1.24xlarge,
-      r5ad.large, r5ad.xlarge, r5ad.2xlarge, r5ad.4xlarge, r5ad.12xlarge,
-      r5ad.24xlarge, r5a.large, r5a.xlarge, r5a.2xlarge, r5a.4xlarge,
-      r5a.8xlarge, r5a.12xlarge, r5a.16xlarge, r5a.24xlarge, r5d.large,
-      r5d.xlarge, r5d.2xlarge, r5d.4xlarge, r5d.8xlarge, r5d.12xlarge,
-      r5d.16xlarge, r5d.24xlarge, r5d.metal, r5.large, r5.xlarge, r5.2xlarge,
-      r5.4xlarge, r5.8xlarge, r5.12xlarge, r5.16xlarge, r5.24xlarge, r5.metal,
-      r4.large, r4.xlarge, r4.2xlarge, r4.4xlarge, r4.8xlarge, r4.16xlarge,
-      x1.16xlarge, x1.32xlarge, x1e.xlarge, x1e.2xlarge, x1e.4xlarge,
-      x1e.8xlarge, x1e.16xlarge, x1e.32xlarge, z1d.large, z1d.xlarge,
-      z1d.2xlarge, z1d.3xlarge, z1d.6xlarge, z1d.12xlarge, z1d.metal,
-      d2.xlarge, d2.2xlarge, d2.4xlarge, d2.8xlarge, i2.xlarge, i2.2xlarge,
-      i2.4xlarge, i2.8xlarge, h1.2xlarge, h1.4xlarge, h1.8xlarge, h1.16xlarge,
-      i3.large, i3.xlarge, i3.2xlarge, i3.4xlarge, i3.8xlarge, i3.16xlarge,
-      i3.metal, i3en.large, i3en.xlarge, i3en.2xlarge, i3en.3xlarge,
-      i3en.6xlarge, i3en.12xlarge, i3en.24xlarge, i3en.metal]
+    AllowedValues:
+      [
+        t2.nano,
+        t2.micro,
+        t2.small,
+        t2.medium,
+        t2.large,
+        t2.xlarge,
+        t2.2xlarge,
+        t3a.nano,
+        t3a.micro,
+        t3a.small,
+        t3a.medium,
+        t3a.large,
+        t3a.xlarge,
+        t3a.2xlarge,
+        t3.nano,
+        t3.micro,
+        t3.small,
+        t3.medium,
+        t3.large,
+        t3.xlarge,
+        t3.2xlarge,
+        m5ad.large,
+        m5ad.xlarge,
+        m5ad.2xlarge,
+        m5ad.4xlarge,
+        m5ad.12xlarge,
+        m5ad.24xlarge,
+        m5a.large,
+        m5a.xlarge,
+        m5a.2xlarge,
+        m5a.4xlarge,
+        m5a.8xlarge,
+        m5a.12xlarge,
+        m5a.16xlarge,
+        m5a.24xlarge,
+        m5d.large,
+        m5d.xlarge,
+        m5d.2xlarge,
+        m5d.4xlarge,
+        m5d.8xlarge,
+        m5d.12xlarge,
+        m5d.16xlarge,
+        m5d.24xlarge,
+        m5d.metal,
+        m5n.large,
+        m5n.xlarge,
+        m5n.2xlarge,
+        m5n.4xlarge,
+        m5n.8xlarge,
+        m5n.12xlarge,
+        m5n.16xlarge,
+        m5dn.large,
+        m5dn.xlarge,
+        m5dn.2xlarge,
+        m5dn.4xlarge,
+        m5dn.8xlarge,
+        m5dn.12xlarge,
+        m5dn.16xlarge,
+        m5n.24xlarge,
+        m5dn.24xlarge,
+        r5n.large,
+        r5n.xlarge,
+        r5n.2xlarge,
+        r5n.4xlarge,
+        r5n.8xlarge,
+        r5n.12xlarge,
+        r5n.16xlarge,
+        r5dn.large,
+        r5dn.xlarge,
+        r5dn.2xlarge,
+        r5dn.4xlarge,
+        r5dn.8xlarge,
+        r5dn.12xlarge,
+        r5dn.16xlarge,
+        r5n.24xlarge,
+        r5dn.24xlarge,
+        m5.large,
+        m5.xlarge,
+        m5.2xlarge,
+        m5.4xlarge,
+        m5.8xlarge,
+        m5.12xlarge,
+        m5.16xlarge,
+        m5.24xlarge,
+        m5.metal,
+        m4.large,
+        m4.xlarge,
+        m4.2xlarge,
+        m4.4xlarge,
+        m4.10xlarge,
+        m4.16xlarge,
+        a1.medium,
+        a1.large,
+        a1.xlarge,
+        a1.2xlarge,
+        a1.4xlarge,
+        a1.metal,
+        c5n.large,
+        c5n.xlarge,
+        c5n.2xlarge,
+        c5n.4xlarge,
+        c5n.9xlarge,
+        c5n.18xlarge,
+        c5n.metal,
+        c5d.large,
+        c5d.xlarge,
+        c5d.2xlarge,
+        c5d.4xlarge,
+        c5d.9xlarge,
+        c5d.12xlarge,
+        c5d.18xlarge,
+        c5d.24xlarge,
+        c5d.metal,
+        c5.large,
+        c5.xlarge,
+        c5.2xlarge,
+        c5.4xlarge,
+        c5.9xlarge,
+        c5.12xlarge,
+        c5.18xlarge,
+        c5.24xlarge,
+        c5.metal,
+        c4.large,
+        c4.xlarge,
+        c4.2xlarge,
+        c4.4xlarge,
+        c4.8xlarge,
+        f1.2xlarge,
+        f1.4xlarge,
+        f1.16xlarge,
+        g2.2xlarge,
+        g2.8xlarge,
+        g3s.xlarge,
+        g3.4xlarge,
+        g3.8xlarge,
+        g3.16xlarge,
+        g4dn.xlarge,
+        g4dn.2xlarge,
+        g4dn.4xlarge,
+        g4dn.8xlarge,
+        g4dn.12xlarge,
+        g4dn.16xlarge,
+        p2.xlarge,
+        p2.8xlarge,
+        p2.16xlarge,
+        p3.2xlarge,
+        p3.8xlarge,
+        p3.16xlarge,
+        p3dn.24xlarge,
+        inf1.xlarge,
+        inf1.2xlarge,
+        inf1.6xlarge,
+        inf1.24xlarge,
+        r5ad.large,
+        r5ad.xlarge,
+        r5ad.2xlarge,
+        r5ad.4xlarge,
+        r5ad.12xlarge,
+        r5ad.24xlarge,
+        r5a.large,
+        r5a.xlarge,
+        r5a.2xlarge,
+        r5a.4xlarge,
+        r5a.8xlarge,
+        r5a.12xlarge,
+        r5a.16xlarge,
+        r5a.24xlarge,
+        r5d.large,
+        r5d.xlarge,
+        r5d.2xlarge,
+        r5d.4xlarge,
+        r5d.8xlarge,
+        r5d.12xlarge,
+        r5d.16xlarge,
+        r5d.24xlarge,
+        r5d.metal,
+        r5.large,
+        r5.xlarge,
+        r5.2xlarge,
+        r5.4xlarge,
+        r5.8xlarge,
+        r5.12xlarge,
+        r5.16xlarge,
+        r5.24xlarge,
+        r5.metal,
+        r4.large,
+        r4.xlarge,
+        r4.2xlarge,
+        r4.4xlarge,
+        r4.8xlarge,
+        r4.16xlarge,
+        x1.16xlarge,
+        x1.32xlarge,
+        x1e.xlarge,
+        x1e.2xlarge,
+        x1e.4xlarge,
+        x1e.8xlarge,
+        x1e.16xlarge,
+        x1e.32xlarge,
+        z1d.large,
+        z1d.xlarge,
+        z1d.2xlarge,
+        z1d.3xlarge,
+        z1d.6xlarge,
+        z1d.12xlarge,
+        z1d.metal,
+        d2.xlarge,
+        d2.2xlarge,
+        d2.4xlarge,
+        d2.8xlarge,
+        i2.xlarge,
+        i2.2xlarge,
+        i2.4xlarge,
+        i2.8xlarge,
+        h1.2xlarge,
+        h1.4xlarge,
+        h1.8xlarge,
+        h1.16xlarge,
+        i3.large,
+        i3.xlarge,
+        i3.2xlarge,
+        i3.4xlarge,
+        i3.8xlarge,
+        i3.16xlarge,
+        i3.metal,
+        i3en.large,
+        i3en.xlarge,
+        i3en.2xlarge,
+        i3en.3xlarge,
+        i3en.6xlarge,
+        i3en.12xlarge,
+        i3en.24xlarge,
+        i3en.metal,
+      ]
 
 Mappings:
   RegionMap:
@@ -128,18 +324,18 @@ Resources:
   GylMainVpc:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: "10.0.0.0/16"
+      CidrBlock: '10.0.0.0/16'
       EnableDnsHostnames: true
 
   GylMainSubnet:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref GylMainVpc
-      CidrBlock: "10.0.0.0/24"
+      CidrBlock: '10.0.0.0/24'
 
   GylMainInternetGateway:
     Type: AWS::EC2::InternetGateway
-  
+
   GylMainGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -150,13 +346,13 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref GylMainVpc
-  
+
   GylMainRoute:
     Type: AWS::EC2::Route
     DependsOn: GylMainGatewayAttachment
     Properties:
       RouteTableId: !Ref GylMainRouteTable
-      DestinationCidrBlock: "0.0.0.0/0"
+      DestinationCidrBlock: '0.0.0.0/0'
       GatewayId: !Ref GylMainInternetGateway
 
   GylMainSubnetRouteTableAssociation:
@@ -256,8 +452,7 @@ Resources:
       InstanceType: !Ref GylEc2InstanceType
       KeyName: !Ref GylKeyName
       NetworkInterfaces:
-        -
-          GroupSet:
+        - GroupSet:
             - !Ref GylMainEc2SecurityGroup
           AssociatePublicIpAddress: true
           DeviceIndex: 0
@@ -273,7 +468,7 @@ Resources:
             VolumeType: 'gp2'
             VolumeSize: '8'
             DeleteOnTermination: 'true'
-      UserData: !Base64 
+      UserData: !Base64
         'Fn::Join':
           - ''
           - - |
@@ -309,8 +504,7 @@ Resources:
                   AWS_ACCESS_KEY_ID=${AwsAccessKeyId}
                   AWS_SECRET_ACCESS_KEY=${AwsSecretAccessKey}
 
-                -
-                  SourceEmail: !Ref SesSourceEmail
+                - SourceEmail: !Ref SesSourceEmail
                   FallbackSourceEmail: !Ref SesSourceEmail
                   UnsubscribeLinkTemplate: 'test'
                   DbPrefix: !Ref DbTablePrefix
@@ -330,8 +524,7 @@ Resources:
                   AWS_ACCESS_KEY_ID=${AwsAccessKeyId}
                   AWS_SECRET_ACCESS_KEY=${AwsSecretAccessKey}
 
-                - 
-                  DbPrefix: !Ref DbTablePrefix
+                - DbPrefix: !Ref DbTablePrefix
                   AwsRegion: !Ref AWS::Region
                   AwsAccessKeyId: !Ref BroadcastUserAccessKeyId
                   AwsSecretAccessKey: !Ref BroadcastUserSecretAccessKey
@@ -489,6 +682,7 @@ Resources:
         GylSettingsTableArn: !Ref GylSettingsTableArn
         GylSubscribersTableArn: !Ref GylSubscribersTableArn
         GylQueueTableArn: !Ref GylQueueTableArn
+        GylTemplateHistoryTableArn: !Ref GylTemplateHistoryTableArn
       TemplateURL: !Ref GylAdminApiStackTemplateUrl
 
   # Public API Meta
@@ -512,19 +706,16 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: apigateway.amazonaws.com
             Action: 'sts:AssumeRole'
       Policies:
-        -
-          PolicyName: GylPublicApiCloudWatchPolicy
+        - PolicyName: GylPublicApiCloudWatchPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
@@ -567,45 +758,36 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: GylSubscriberPostLambdaPolicy
+        - PolicyName: GylSubscriberPostLambdaPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action: logs:CreateLogGroup
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':log-group:/aws/lambda/GylSubscriberPost:*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
@@ -613,15 +795,13 @@ Resources:
                     - ''
                     - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:PutItem
                   - dynamodb:UpdateItem
                   - dynamodb:GetItem
                 Resource: !Ref GylSubscribersTableArn
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - ses:SendEmail
                 Resource: '*'
@@ -644,11 +824,9 @@ Resources:
           PUBLIC_API: !Join
             - ''
             - - https://
-              -
-                Ref: GylPublicApi
+              - Ref: GylPublicApi
               - .execute-api.
-              -
-                Ref: AWS::Region
+              - Ref: AWS::Region
               - .amazonaws.com/
               - beta
           SOURCE_EMAIL: !Ref SesSourceEmail
@@ -664,14 +842,11 @@ Resources:
       SourceArn: !Join
         - ''
         - - 'arn:aws:execute-api:'
-          - 
-            Ref: AWS::Region
+          - Ref: AWS::Region
           - ':'
-          -
-            Ref: AWS::AccountId
+          - Ref: AWS::AccountId
           - ':'
-          -
-            Ref: GylPublicApi
+          - Ref: GylPublicApi
           - '/*'
   GylPublicApiSubscriberPost:
     Type: AWS::ApiGateway::Method
@@ -687,8 +862,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: false
       Integration:
@@ -697,17 +871,14 @@ Resources:
         Uri: !Join
           - ''
           - - 'arn:aws:apigateway:'
-            -
-              Ref: AWS::Region
+            - Ref: AWS::Region
             - :lambda:path/2015-03-31/functions/
-            -
-              !GetAtt
-                - GylSubscriberPostLambda
-                - Arn
+            - !GetAtt
+              - GylSubscriberPostLambda
+              - Arn
             - /invocations
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylPublicApiSubscriberOptions:
@@ -724,8 +895,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: false
             method.response.header.Access-Control-Allow-Methods: false
@@ -737,8 +907,7 @@ Resources:
         RequestTemplates:
           application/json: '{"statusCode": 200}'
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
@@ -760,55 +929,44 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: GylSubscriberConfirmGetLambdaPolicy
+        - PolicyName: GylSubscriberConfirmGetLambdaPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action: logs:CreateLogGroup
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':log-group:/aws/lambda/GylSubscriberConfirmGet:*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:GetItem
                 Resource: !Ref GylSubscribersTableArn
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource: !Ref GylSubscribersTableArn
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Settings
                 Resource: !Ref GylSettingsTableArn
@@ -840,14 +998,11 @@ Resources:
       SourceArn: !Join
         - ''
         - - 'arn:aws:execute-api:'
-          - 
-            Ref: AWS::Region
+          - Ref: AWS::Region
           - ':'
-          -
-            Ref: AWS::AccountId
+          - Ref: AWS::AccountId
           - ':'
-          -
-            Ref: GylPublicApi
+          - Ref: GylPublicApi
           - '/*'
   GylPublicApiSubscriberConfirmGet:
     Type: AWS::ApiGateway::Method
@@ -863,8 +1018,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: false
       Integration:
@@ -873,17 +1027,14 @@ Resources:
         Uri: !Join
           - ''
           - - 'arn:aws:apigateway:'
-            -
-              Ref: AWS::Region
+            - Ref: AWS::Region
             - :lambda:path/2015-03-31/functions/
-            -
-              !GetAtt
-                - GylSubscriberConfirmGetLambda
-                - Arn
+            - !GetAtt
+              - GylSubscriberConfirmGetLambda
+              - Arn
             - /invocations
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylPublicApiSubscriberConfirmOptions:
@@ -900,8 +1051,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: false
             method.response.header.Access-Control-Allow-Methods: false
@@ -913,8 +1063,7 @@ Resources:
         RequestTemplates:
           application/json: '{"statusCode": 200}'
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
@@ -934,51 +1083,41 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: GylSubscriberUnsubscribeGetLambdaPolicy
+        - PolicyName: GylSubscriberUnsubscribeGetLambdaPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action: logs:CreateLogGroup
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':log-group:/aws/lambda/GylSubscriberUnsubscribeGet:*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                   - dynamodb:GetItem
                 Resource: !Ref GylSubscribersTableArn
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:GetItem
                 Resource: !Ref GylSettingsTableArn
@@ -1000,11 +1139,9 @@ Resources:
           PUBLIC_API: !Join
             - ''
             - - https://
-              -
-                Ref: GylPublicApi
+              - Ref: GylPublicApi
               - .execute-api.
-              -
-                Ref: AWS::Region
+              - Ref: AWS::Region
               - .amazonaws.com/
               - beta
           GLOBAL_UNSUBSCRIBE_URL: https://unsubscribe.growyourlist.com/
@@ -1020,14 +1157,11 @@ Resources:
       SourceArn: !Join
         - ''
         - - 'arn:aws:execute-api:'
-          - 
-            Ref: AWS::Region
+          - Ref: AWS::Region
           - ':'
-          -
-            Ref: AWS::AccountId
+          - Ref: AWS::AccountId
           - ':'
-          -
-            Ref: GylPublicApi
+          - Ref: GylPublicApi
           - '/*'
   GylPublicApiSubscriberUnsubscribeGet:
     Type: AWS::ApiGateway::Method
@@ -1043,8 +1177,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: false
       Integration:
@@ -1053,17 +1186,14 @@ Resources:
         Uri: !Join
           - ''
           - - 'arn:aws:apigateway:'
-            -
-              Ref: AWS::Region
+            - Ref: AWS::Region
             - :lambda:path/2015-03-31/functions/
-            -
-              !GetAtt
-                - GylSubscriberUnsubscribeGetLambda
-                - Arn
+            - !GetAtt
+              - GylSubscriberUnsubscribeGetLambda
+              - Arn
             - /invocations
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylSubscriberUnsubscribePostLambdaRole:
@@ -1072,45 +1202,36 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: GylSubscriberUnsubscribePostLambdaPolicy
+        - PolicyName: GylSubscriberUnsubscribePostLambdaPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action: logs:CreateLogGroup
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Join
                   - ''
                   - - 'arn:aws:logs:'
-                    - 
-                      Ref: AWS::Region
+                    - Ref: AWS::Region
                     - ':'
-                    -
-                      Ref: AWS::AccountId
+                    - Ref: AWS::AccountId
                     - ':log-group:/aws/lambda/GylSubscriberUnsubscribePost:*'
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
@@ -1118,13 +1239,11 @@ Resources:
                     - ''
                     - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource: !Ref GylSubscribersTableArn
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
@@ -1132,8 +1251,7 @@ Resources:
                     - ''
                     - - !Ref GylQueueTableArn
                       - /index/SubscriberIdIndex
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:BatchWriteItem
                 Resource: !Ref GylQueueTableArn
@@ -1164,14 +1282,11 @@ Resources:
       SourceArn: !Join
         - ''
         - - 'arn:aws:execute-api:'
-          - 
-            Ref: AWS::Region
+          - Ref: AWS::Region
           - ':'
-          -
-            Ref: AWS::AccountId
+          - Ref: AWS::AccountId
           - ':'
-          -
-            Ref: GylPublicApi
+          - Ref: GylPublicApi
           - '/*'
   GylPublicApiSubscriberUnsubscribePost:
     Type: AWS::ApiGateway::Method
@@ -1187,8 +1302,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Origin: false
       Integration:
@@ -1197,17 +1311,14 @@ Resources:
         Uri: !Join
           - ''
           - - 'arn:aws:apigateway:'
-            -
-              Ref: AWS::Region
+            - Ref: AWS::Region
             - :lambda:path/2015-03-31/functions/
-            -
-              !GetAtt
-                - GylSubscriberUnsubscribePostLambda
-                - Arn
+            - !GetAtt
+              - GylSubscriberUnsubscribePostLambda
+              - Arn
             - /invocations
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Origin: "'*'"
   GylPublicApiSubscriberUnsubscribeOptions:
@@ -1224,8 +1335,7 @@ Resources:
       RestApiId:
         Ref: GylPublicApi
       MethodResponses:
-        -
-          StatusCode: '200'
+        - StatusCode: '200'
           ResponseParameters:
             method.response.header.Access-Control-Allow-Headers: false
             method.response.header.Access-Control-Allow-Methods: false
@@ -1237,8 +1347,7 @@ Resources:
         RequestTemplates:
           application/json: '{"statusCode": 200}'
         IntegrationResponses:
-          -
-            StatusCode: '200'
+          - StatusCode: '200'
             ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: >-
                 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
@@ -1261,19 +1370,16 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: GylReactToInteractionLambdaPolicy
+        - PolicyName: GylReactToInteractionLambdaPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
@@ -1281,13 +1387,11 @@ Resources:
                     - ''
                     - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource: !Ref GylSubscribersTableArn
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource: !Ref GylQueueTableArn
@@ -1318,11 +1422,9 @@ Resources:
       SourceArn: !Join
         - ''
         - - 'arn:aws:sns:'
-          -
-            Ref: AWS::Region
+          - Ref: AWS::Region
           - ':'
-          -
-            Ref: AWS::AccountId
+          - Ref: AWS::AccountId
           - ':'
           - GylOpenAndClickTopic
 
@@ -1332,19 +1434,16 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
+          - Effect: Allow
             Principal:
               Service: lambda.amazonaws.com
             Action: sts:AssumeRole
       Policies:
-        -
-          PolicyName: GylReactToUnsubscribeEventLambdaPolicy
+        - PolicyName: GylReactToUnsubscribeEventLambdaPolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Query
                 Resource:
@@ -1352,13 +1451,11 @@ Resources:
                     - ''
                     - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
-              -
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:UpdateItem
                 Resource: !Ref GylSubscribersTableArn
-              - 
-                Effect: Allow
+              - Effect: Allow
                 Action:
                   - dynamodb:Query
                   - dynamodb:BatchWriteItem
@@ -1390,11 +1487,9 @@ Resources:
       SourceArn: !Join
         - ''
         - - 'arn:aws:sns:'
-          -
-            Ref: AWS::Region
+          - Ref: AWS::Region
           - ':'
-          -
-            Ref: AWS::AccountId
+          - Ref: AWS::AccountId
           - ':'
           - GylUnsubscribeEventTopic
 
@@ -1403,8 +1498,7 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        -
-          Endpoint: !GetAtt
+        - Endpoint: !GetAtt
             - GylReactToInteractionLambda
             - Arn
           Protocol: lambda
@@ -1413,8 +1507,7 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        -
-          Endpoint: !GetAtt
+        - Endpoint: !GetAtt
             - GylReactToUnsubscribeEventLambda
             - Arn
           Protocol: lambda
@@ -1423,8 +1516,7 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       Subscription:
-        -
-          Endpoint: !Ref AdminEmail
+        - Endpoint: !Ref AdminEmail
           Protocol: email
       TopicName: GylSesFailureEventTopic
 
@@ -1447,11 +1539,9 @@ Outputs:
     Value: !Join
       - ''
       - - https://
-        -
-          Ref: GylPublicApi
+        - Ref: GylPublicApi
         - .execute-api.
-        -
-          Ref: AWS::Region
+        - Ref: AWS::Region
         - .amazonaws.com/
   GylPublicApiBetaStage:
     Description: 'GYL Public API Stage'
@@ -1461,16 +1551,15 @@ Outputs:
     Value: !Join
       - ''
       - - https://
-        - !GetAtt 
+        - !GetAtt
           - GylAdminApiStack
           - Outputs.GylAdminApi
         - .execute-api.
-        -
-          Ref: AWS::Region
+        - Ref: AWS::Region
         - .amazonaws.com/
   GylAdminApiBetaStage:
     Description: 'GYL Admin API Stage'
-    Value: !GetAtt 
+    Value: !GetAtt
       - GylAdminApiStack
       - Outputs.GylAdminApiBetaStage
   GylSesConfigurationSet:

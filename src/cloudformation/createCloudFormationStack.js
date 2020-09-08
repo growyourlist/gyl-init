@@ -141,6 +141,10 @@ const createCloudFormationStack = async (params) => {
 			ParameterValue: dbOutputs['GylQueueTableArn'],
 		},
 		{
+			ParameterKey: 'GylTemplateHistoryTableArn',
+			ParameterValue: dbOutputs['GylTemplateHistoryTableArn'],
+		},
+		{
 			ParameterKey: 'GylAdminApiStackTemplateUrl',
 			ParameterValue: `https://${LambdaBucketName}.s3.amazonaws.com/gyl-template-admin-api.yaml`,
 		},

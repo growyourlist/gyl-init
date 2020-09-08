@@ -20,6 +20,9 @@ Parameters:
   GylQueueTableArn:
     Description: Arn of the Queue DynamoDB table
     Type: String
+  GylTemplateHistoryTableArn:
+    Description: Arn of the Template History table
+    Type: String
 
 Resources:
   # Admin API Meta
