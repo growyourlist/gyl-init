@@ -3714,6 +3714,8 @@ Resources:
         - GylAdminSubscribersPostLambdaRole
         - Arn
       Runtime: nodejs12.x
+      Timeout: 15
+      MemorySize: 512
       Environment:
         Variables:
           DB_TABLE_PREFIX: !Ref DbTablePrefix
