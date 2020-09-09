@@ -202,6 +202,10 @@ const updateCloudFormationStack = async (params) => {
 				ParameterValue: dbOutputs['GylQueueTableArn'],
 			},
 			{
+				ParameterKey: 'GylTemplateHistoryArn',
+				ParameterValue: dbOutputs['GylTemplateHistoryArn'],
+			},
+			{
 				ParameterKey: 'GylAdminApiStackTemplateUrl',
 				ParameterValue: adminApiStackS3Path,
 			},
