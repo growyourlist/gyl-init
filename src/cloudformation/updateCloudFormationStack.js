@@ -110,12 +110,20 @@ const updateCloudFormationStack = async (params) => {
 	Logger.log(
 		'Update CloudFormation stacks. This process can take several minutes...'
 	);
+
+	const validateTemplate = async (TemplateURL) => {
+		try {
+			await cloudFormation.validateTemplate({ TemplateURL }).promise();
+		} catch (err) {
+			Logger.error(`Error validating: ${TemplateURL}`);
+			throw err;
+		}
+	};
+
 	await Promise.all([
-		cloudFormation.validateTemplate({ TemplateURL: dbStackS3Path }).promise(),
-		cloudFormation.validateTemplate({ TemplateURL: mainStackS3Path }).promise(),
-		cloudFormation
-			.validateTemplate({ TemplateURL: adminApiStackS3Path })
-			.promise(),
+		validateTemplate(dbStackS3Path),
+		validateTemplate(mainStackS3Path),
+		validateTemplate(adminApiStackS3Path),
 	]);
 	Logger.info('All CloudFormation templates successfully validated.');
 	const dbChanges = await createChangeSet(
@@ -202,8 +210,12 @@ const updateCloudFormationStack = async (params) => {
 				ParameterValue: dbOutputs['GylQueueTableArn'],
 			},
 			{
-				ParameterKey: 'GylTemplateHistoryArn',
-				ParameterValue: dbOutputs['GylTemplateHistoryArn'],
+				ParameterKey: 'GylTemplateHistoryTableArn',
+				ParameterValue: dbOutputs['GylTemplateHistoryTableArn'],
+			},
+			{
+				ParameterKey: 'GylAutoresponderHistoryTableArn',
+				ParameterValue: dbOutputs['GylAutoresponderHistoryTableArn'],
 			},
 			{
 				ParameterKey: 'GylAdminApiStackTemplateUrl',

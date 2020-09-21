@@ -152,17 +152,7 @@ ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
 				`GYL ${GylVersion} will now be uploaded to your AWS ` +
 				'account. This can take some time.\n'
 		);
-
-		// Logger.log(LambdaBucketName);
-		// Logger.log(ApiAuthKeyHash);
-		// Logger.log(DbTablePrefix);
-		// Logger.log(SesSourceEmail);
-		// Logger.log(QueueUser);
-		// Logger.log(BroadcastUser);
-		// Logger.log(AdminEmail);
-		// Logger.log(Ec2InstanceType);
-		// Logger.log(GylVersion);
-
+		await uploadLambdaFunctions(LambdaBucketName);
 		const outputs = await updateCloudFormationStack({
 			LambdaBucketName,
 			ApiAuthKeyHash,

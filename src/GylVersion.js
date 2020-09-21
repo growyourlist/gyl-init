@@ -1,4 +1,4 @@
-const GylVersion = '0.2.1';
+const GylVersion = '0.3.2';
 module.exports = {
 	GylVersion,
 };

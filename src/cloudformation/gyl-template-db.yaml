@@ -129,3 +129,8 @@ Outputs:
     Value: !GetAtt
       - GylTemplateHistoryTable
       - Arn
+  GylAutoresponderHistoryTable:
+    Description: 'GylAutoresponderHistoryTableArn'
+    Value: !GetAtt
+      - GylAutoresponderHistoryTable
+      - Arn

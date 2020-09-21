@@ -23,6 +23,12 @@ Parameters:
   GylTemplateHistoryTableArn:
     Description: Arn of the Template History table
     Type: String
+  GylAutoresponderHistoryTableArn:
+    Description: Arn of the Autoresponder History table
+    Type: String
+  GylReactToInteractionLambdaArn:
+    Description: Arn of the React to Interaction lambda
+    Type: String
 
 Resources:
   # Admin API Meta
@@ -161,6 +167,8 @@ Resources:
       - GylAdminApiAuthPingGet
       - GylAdminApiAdminAutoresponderGet
       - GylAdminApiAdminAnalyticsGet
+      - GylAdminApiAdminAutoConfirmTagsGet
+      - GylAdminApiAdminAutoConfirmTagsPost
       - GylAdminApiAdminAutoresponderPost
       - GylAdminApiAdminAutoresponderDelete
       - GylAdminApiAdminAutorespondersGet
@@ -582,6 +590,287 @@ Resources:
         Ref: GylAdminApi
       ParentId: !Ref GylAdminApiAdminResource
       PathPart: analytics
+  GylAdminAutoConfirmTagsPostLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylAdminAutoConfirmTagsPostLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylAdminAutoConfirmTagsPost:*'
+              -
+                Effect: Allow
+                Action:
+                  - lambda:UpdateFunctionConfiguration
+                  - lambda:GetFunctionConfiguration
+                Resource: !Ref GylReactToInteractionLambdaArn
+  GylAdminAutoConfirmTagsPostLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-auto-confirm-tags-post-dist.zip
+      Description: Posts (creates or updates) the list of tags that auto confirm a subscriber when added via an interaction.
+      FunctionName: GylAdminAutoConfirmTagsPost
+      Handler: index.handler
+      Role: !GetAtt
+        - GylAdminAutoConfirmTagsPostLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+  GylAdminAutoConfirmTagsPostPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylAdminAutoConfirmTagsPostLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylAdminApi
+          - '/*'
+  GylAdminApiAdminAutoConfirmTagsPost:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminAutoConfirmTagsPostPermission
+    Properties:
+      HttpMethod: POST
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylAdminApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminAutoConfirmTagsResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylAdminAutoConfirmTagsPostLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylAdminAutoConfirmTagsGetLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        -
+          PolicyName: GylAdminAutoConfirmTagsGetLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              -
+                Effect: Allow
+                Action: logs:CreateLogGroup
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':*'
+              -
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:logs:'
+                    - 
+                      Ref: AWS::Region
+                    - ':'
+                    -
+                      Ref: AWS::AccountId
+                    - ':log-group:/aws/lambda/GylAdminAutoConfirmTagsGet:*'
+              -
+                Effect: Allow
+                Action:
+                  - lambda:GetFunctionConfiguration
+                Resource: !Ref GylReactToInteractionLambdaArn
+  GylAdminAutoConfirmTagsGetLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: gyl-admin-auto-confirm-tags-get-dist.zip
+      Description: Gets the list of tags tag that auto confirm a subscriber when added via an interaction.
+      FunctionName: GylAdminAutoConfirmTagsGet
+      Handler: index.handler
+      Role: !GetAtt
+        - GylAdminAutoConfirmTagsGetLambdaRole
+        - Arn
+      Runtime: nodejs12.x
+  GylAdminAutoConfirmTagsGetPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:invokeFunction
+      FunctionName: !GetAtt
+        - GylAdminAutoConfirmTagsGetLambda
+        - Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Join
+        - ''
+        - - 'arn:aws:execute-api:'
+          - 
+            Ref: AWS::Region
+          - ':'
+          -
+            Ref: AWS::AccountId
+          - ':'
+          -
+            Ref: GylAdminApi
+          - '/*'
+  GylAdminApiAdminAutoConfirmTagsGet:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminAutoConfirmTagsGetPermission
+    Properties:
+      HttpMethod: GET
+      AuthorizationType: CUSTOM
+      AuthorizerId: !Ref GylAdminApiAuthorizer
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminAutoConfirmTagsResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Join
+          - ''
+          - - 'arn:aws:apigateway:'
+            -
+              Ref: AWS::Region
+            - :lambda:path/2015-03-31/functions/
+            -
+              !GetAtt
+                - GylAdminAutoConfirmTagsGetLambda
+                - Arn
+            - /invocations
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylAdminApiAdminAutoConfirmTagsOptions:
+    Type: AWS::ApiGateway::Method
+    DependsOn:
+      - GylAdminApiEmptyModel
+    Properties:
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      ApiKeyRequired: false
+      RequestParameters: {}
+      ResourceId:
+        Ref: GylAdminApiAdminAutoConfirmTagsResource
+      RestApiId:
+        Ref: GylAdminApi
+      MethodResponses:
+        -
+          StatusCode: '200'
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Access-Control-Allow-Methods: false
+            method.response.header.Access-Control-Allow-Origin: false
+          ResponseModels:
+            application/json: GylAdminApiEmptyModel
+      Integration:
+        Type: MOCK
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        IntegrationResponses:
+          -
+            StatusCode: '200'
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: >-
+                'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Gyl-Auth-Key'
+              method.response.header.Access-Control-Allow-Methods: >-
+                'POST,GET,OPTIONS'
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+  GylAdminApiAdminAutoConfirmTagsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId:
+        Ref: GylAdminApi
+      ParentId: !Ref GylAdminApiAdminResource
+      PathPart: auto-confirm-tags
   GylAdminAutoresponderPostLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -630,6 +919,11 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                 Resource: !Ref GylSettingsTableArn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !Ref GylAutoresponderHistoryTableArn
   GylAdminAutoresponderPostLambda:
     Type: AWS::Lambda::Function
     Properties:
