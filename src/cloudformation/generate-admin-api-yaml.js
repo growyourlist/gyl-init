@@ -154,6 +154,10 @@ const adminApiShorthand = {
 								actions: ['dynamodb:GetItem', 'dynamodb:PutItem'],
 								resource: '!Ref GylSettingsTableArn',
 							},
+							{
+								actions: ['dynamodb:PutItem'],
+								resource: '!Ref GylBroadcastQueueTableArn',
+							},
 						],
 					},
 					func: {

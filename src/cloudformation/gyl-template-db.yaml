@@ -107,6 +107,19 @@ Resources:
           KeyType: HASH
         - AttributeName: timestamp
           KeyType: RANGE
+  GylBroadcastQueueTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: !Sub
+        - '${DbTablePrefix}BroadcastQueue'
+        - DbTablePrefix: !Ref DbTablePrefix
+      AttributeDefinitions:
+        - AttributeName: runAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: runAt
+          KeyType: HASH
 
 Outputs:
   GylSettingsTable:
@@ -133,4 +146,9 @@ Outputs:
     Description: 'GylAutoresponderHistoryTableArn'
     Value: !GetAtt
       - GylAutoresponderHistoryTable
+      - Arn
+  GylBroadcastQueueTable:
+    Description: 'GylBroadcastQueueTableArn'
+    Value: !GetAtt
+      - GylBroadcastQueueTable
       - Arn

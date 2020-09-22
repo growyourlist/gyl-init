@@ -26,6 +26,9 @@ Parameters:
   GylAutoresponderHistoryTableArn:
     Description: Arn of the Autoresponder History table
     Type: String
+  GylBroadcastQueueTableArn:
+    Description: Arn of the Broadcast Queue table
+    Type: String
   GylReactToInteractionLambdaArn:
     Description: Arn of the React to Interaction lambda
     Type: String
@@ -1502,6 +1505,11 @@ Resources:
                   - dynamodb:GetItem
                   - dynamodb:PutItem
                 Resource: !Ref GylSettingsTableArn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !Ref GylBroadcastQueueTableArn
   GylAdminBroadcastPostLambda:
     Type: AWS::Lambda::Function
     Properties:
