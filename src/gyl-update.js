@@ -23,6 +23,7 @@ const { GylVersion } = require('./GylVersion');
 
 const createUsers = require('./iam/createUsers');
 const { realpath } = require('fs');
+const updateUsers = require('./iam/updateUsers');
 
 const showChange = (paramName = '', oldValue = '', newValue = '') => {
 	if (oldValue === newValue) {
@@ -182,6 +183,7 @@ ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
 		Logger.log('Populate DB is currently a manual step for update processes');
 		const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?id={{subscriberId}}`;
 		await updateEnvironmentVars(unsubscribeLink);
+		await updateUsers(DbTablePrefix);
 
 		Logger.log('\n# GrowYourList Details\n');
 
