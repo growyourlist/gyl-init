@@ -3641,6 +3641,20 @@ Resources:
                 Resource:
                   - !Join
                     - ''
+                    - - !Ref GylQueueTableArn
+                      - /index/SubscriberIdIndex
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:BatchWriteItem
+                Resource: !Ref GylQueueTableArn
+              -
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                Resource:
+                  - !Join
+                    - ''
                     - - !Ref GylSubscribersTableArn
                       - /index/EmailToStatusIndex
               -

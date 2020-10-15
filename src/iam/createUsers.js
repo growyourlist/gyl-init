@@ -1,8 +1,7 @@
 const getAWS = require('../getAWS');
 const Logger = require('../Logger');
 
-const createUsers = async dbTablePrefix => {
-
+const createUsers = async (dbTablePrefix) => {
 	const region = process.env.AWS_REGION;
 	const accountId = process.env.AWS_ACCOUNT_ID;
 
@@ -12,7 +11,7 @@ const createUsers = async dbTablePrefix => {
 	const createUser = async (UserName, PolicyDocument) => {
 		Logger.info(`Creating user: ${UserName}`);
 		await iam.createUser({ UserName }).promise();
-	
+
 		// Create a the permissions policy for the user.
 		const PolicyName = `${UserName}Policy`;
 		Logger.info(`Creating policy: ${PolicyName}`);
@@ -24,7 +23,7 @@ const createUsers = async dbTablePrefix => {
 				PolicyDocument,
 			})
 			.promise();
-	
+
 		// Attach the permissions policy to the user.
 		Logger.info(`Attaching policy ${PolicyName} to ${UserName}`);
 		await iam
@@ -33,7 +32,7 @@ const createUsers = async dbTablePrefix => {
 				PolicyArn: policyResponse.Policy.Arn,
 			})
 			.promise();
-	
+
 		// Generate access keys for the user
 		Logger.info(`Generating access keys for ${UserName}`);
 		const response = await iam.createAccessKey({ UserName }).promise();
@@ -42,7 +41,7 @@ const createUsers = async dbTablePrefix => {
 			secretAccessKey: response.AccessKey.SecretAccessKey,
 		};
 	};
-	
+
 	Logger.log('Creating GYL AWS users...');
 	dbTablePrefix = dbTablePrefix || '';
 	const GylQueueUser = await createUser(
@@ -73,7 +72,11 @@ const createUsers = async dbTablePrefix => {
 				},
 				{
 					Effect: 'Allow',
-					Action: ['ses:SendTemplatedEmail', 'ses:SendBulkTemplatedEmail', 'ses:SendEmail'],
+					Action: [
+						'ses:SendTemplatedEmail',
+						'ses:SendBulkTemplatedEmail',
+						'ses:SendEmail',
+					],
 					Resource: '*',
 				},
 			],
@@ -102,6 +105,16 @@ const createUsers = async dbTablePrefix => {
 					Effect: 'Allow',
 					Action: ['dynamodb:Scan'],
 					Resource: `arn:aws:dynamodb:${region}:${accountId}:table/${dbTablePrefix}Subscribers`,
+				},
+				{
+					Effect: 'Allow',
+					Action: [
+						'dynamodb:PutItem',
+						'dynamodb:DeleteItem',
+						'dynamodb:Query',
+						'dynamodb:UpdateItem',
+					],
+					Resource: `arn:aws:dynamodb:${region}:${accountId}:table/${dbTablePrefix}BroadcastQueue`,
 				},
 			],
 		})

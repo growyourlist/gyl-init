@@ -115,11 +115,15 @@ Resources:
         - '${DbTablePrefix}BroadcastQueue'
         - DbTablePrefix: !Ref DbTablePrefix
       AttributeDefinitions:
+        - AttributeName: phase
+          AttributeType: S
         - AttributeName: runAt
           AttributeType: S
       KeySchema:
-        - AttributeName: runAt
+        - AttributeName: phase
           KeyType: HASH
+        - AttributeName: runAt
+          KeyType: RANGE
 
 Outputs:
   GylSettingsTable:

@@ -495,6 +495,15 @@ const adminApiShorthand = {
 							permissions: [
 								{
 									actions: ['dynamodb:Query'],
+									resource: '!Ref GylQueueTableArn',
+									resourceNameSuffix: '/index/SubscriberIdIndex',
+								},
+								{
+									actions: ['dynamodb:BatchWriteItem'],
+									resource: '!Ref GylQueueTableArn'
+								},
+								{
+									actions: ['dynamodb:Query'],
 									resource: '!Ref GylSubscribersTableArn',
 									resourceNameSuffix: '/index/EmailToStatusIndex',
 								},
