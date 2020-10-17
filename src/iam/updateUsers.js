@@ -43,17 +43,28 @@ const updateUsers = async (dbTablePrefix) => {
 				Resource: bqrArn,
 			});
 			const broadcastSubscribersPolicyIndex = policyDoc.Statement.findIndex(
-				(stmt) => stmt.Resource === subscribersArn
+				(stmt) => ((stmt.Resource === subscribersArn) || (Array.isArray(Resource) && stmt.Resource.indexOf(subscribersArn) >= 0))
 			);
-			policyDoc.Statement[broadcastSubscribersPolicyIndex] = Object.assign(
-				{},
-				policyDoc.Statement[broadcastSubscribersPolicyIndex],
-				{
-					Action: policyDoc.Statement[broadcastSubscribersPolicyIndex].concat(
-						'dynamodb:UpdateItem'
-					),
-				}
-			);
+			if (broadcastSubscribersPolicyIndex >= 0) {
+				policyDoc.Statement[broadcastSubscribersPolicyIndex] = Object.assign(
+					{},
+					policyDoc.Statement[broadcastSubscribersPolicyIndex],
+					{
+						Action: policyDoc.Statement[broadcastSubscribersPolicyIndex].concat(
+							'dynamodb:UpdateItem'
+						),
+					}
+				);
+			}
+			else {
+				policyDoc.Statement.push({
+					Effect: 'Allow',
+					Action: [
+						'dynamodb:UpdateItem',
+					],
+					Resource: subscribersArn,
+				})
+			}
 
 			await iam
 				.createPolicyVersion({
