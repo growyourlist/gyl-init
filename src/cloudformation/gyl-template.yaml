@@ -724,7 +724,7 @@ Resources:
                       - Ref: AWS::Region
                       - ':'
                       - Ref: AWS::AccountId
-                      - ':log-group/aws/lambda/GylReactToInteraction:*'
+                      - ':log-group:/aws/lambda/GylReactToInteraction:*'
   GylReactToInteractionLambda:
     Type: AWS::Lambda::Function
     Properties:
