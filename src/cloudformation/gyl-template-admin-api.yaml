@@ -32,6 +32,9 @@ Parameters:
   GylReactToInteractionLambdaArn:
     Description: Arn of the React to Interaction lambda
     Type: String
+  GylVersion:
+    Description: The current version of GYL
+    Type: String
 
 Resources:
   # Admin API Meta
@@ -53,7 +56,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-api-authorizer-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-api-authorizer-dist.zip'
       Description: Authorizes requests to the GYL API
       FunctionName: GylAdminApiAuthorizer
       Handler: index.authorizer
@@ -480,7 +486,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-analytics-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-analytics-get-dist.zip'
       Description: Gets email analytics
       FunctionName: GylAdminAnalyticsGet
       Handler: index.handler
@@ -647,7 +656,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-auto-confirm-tags-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-auto-confirm-tags-post-dist.zip'
       Description: Posts (creates or updates) the list of tags that auto confirm a subscriber when added via an interaction.
       FunctionName: GylAdminAutoConfirmTagsPost
       Handler: index.handler
@@ -766,7 +778,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-auto-confirm-tags-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-auto-confirm-tags-get-dist.zip'
       Description: Gets the list of tags tag that auto confirm a subscriber when added via an interaction.
       FunctionName: GylAdminAutoConfirmTagsGet
       Handler: index.handler
@@ -932,7 +947,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-autoresponder-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-autoresponder-post-dist.zip'
       Description: Posts (creates or updates) an autoresponder
       FunctionName: GylAdminAutoresponderPost
       Handler: index.handler
@@ -1054,7 +1072,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-autoresponder-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-autoresponder-get-dist.zip'
       Description: Gets an autoresponder
       FunctionName: GylAdminAutoresponderGet
       Handler: index.handler
@@ -1176,7 +1197,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-autoresponder-delete-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-autoresponder-delete-dist.zip'
       Description: Deletes an autoresponder
       FunctionName: GylAdminAutoresponderDelete
       Handler: index.handler
@@ -1340,7 +1364,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-autoresponders-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-autoresponders-get-dist.zip'
       Description: Gets a list of autoresponders
       FunctionName: GylAdminAutorespondersGet
       Handler: index.handler
@@ -1515,7 +1542,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-broadcast-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-broadcast-post-dist.zip'
       Description: Triggers a broadcast
       FunctionName: GylAdminBroadcastPost
       Handler: index.handler
@@ -1679,7 +1709,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-email-history-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-email-history-get-dist.zip'
       Description: Gets the history of sent emails
       FunctionName: GylAdminEmailHistoryGet
       Handler: index.handler
@@ -1844,7 +1877,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-list-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-list-post-dist.zip'
       Description: Posts a info about a new list
       FunctionName: GylAdminListPost
       Handler: index.handler
@@ -1967,7 +2003,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-list-delete-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-list-delete-dist.zip'
       Description: Deletes info about a list
       FunctionName: GylAdminListDelete
       Handler: index.handler
@@ -2131,7 +2170,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-lists-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-lists-get-dist.zip'
       Description: Gets the list of mailing lists
       FunctionName: GylAdminListsGet
       Handler: index.handler
@@ -2295,7 +2337,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-postal-address-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-postal-address-get-dist.zip'
       Description: Gets the account postal address
       FunctionName: GylAdminPostalAddressGet
       Handler: index.handler
@@ -2479,7 +2524,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-single-email-send-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-single-email-send-post-dist.zip'
       Description: Sends a single email using given text and/or html
       FunctionName: GylAdminSingleEmailSendPost
       Handler: index.handler
@@ -2653,7 +2701,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-get-dist.zip'
       Description: Gets the full subscriber
       FunctionName: GylAdminSubscriberGet
       Handler: index.handler
@@ -2811,7 +2862,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-post-dist.zip'
       Description: Posts (create or update if email exists) a subscriber
       FunctionName: GylAdminSubscriberPost
       Handler: index.handler
@@ -2957,7 +3011,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-delete-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-delete-dist.zip'
       Description: Deletes a subscriber
       FunctionName: GylAdminSubscriberDelete
       Handler: index.handler
@@ -3139,7 +3196,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-queue-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-queue-get-dist.zip'
       Description: Gets a subscribers queued items
       FunctionName: GylAdminSubscriberQueueGet
       Handler: index.handler
@@ -3307,7 +3367,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-status-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-status-get-dist.zip'
       Description: Gets the status of a subscriber (subscriberId, email, unsubscribed, confirmed, tags)
       FunctionName: GylAdminSubscriberStatusGet
       Handler: index.handler
@@ -3480,7 +3543,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-tag-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-tag-post-dist.zip'
       Description: Adds a tag to a subscriber.
       FunctionName: GylAdminSubscriberTagPost
       Handler: index.handler
@@ -3667,7 +3733,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-untag-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-untag-post-dist.zip'
       Description: Removes a tag from a subscriber.
       FunctionName: GylAdminSubscriberUntagPost
       Handler: index.handler
@@ -3854,7 +3923,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-unsubscribe-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-unsubscribe-post-dist.zip'
       Description: Unsubscribes a subscriber
       FunctionName: GylAdminSubscriberUnsubscribePost
       Handler: index.handler
@@ -4027,7 +4099,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscribers-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscribers-post-dist.zip'
       Description: Posts multiple subscribers (between 1 and 25 subscribers inclusive)
       FunctionName: GylAdminSubscribersPost
       Handler: index.handler
@@ -4193,7 +4268,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-count-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-count-post-dist.zip'
       Description: Triggers a count of subscribers
       FunctionName: GylAdminSubscriberCountPost
       Handler: index.handler
@@ -4315,7 +4393,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-subscriber-count-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-subscriber-count-get-dist.zip'
       Description: Gets the status of the subscriber count
       FunctionName: GylAdminSubscriberCountGet
       Handler: index.handler
@@ -4485,7 +4566,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-template-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-template-post-dist.zip'
       Description: Posts (creates or updates) an email template.
       FunctionName: GylAdminTemplatePost
       Handler: index.handler
@@ -4607,7 +4691,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-template-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-template-get-dist.zip'
       Description: Gets an email template.
       FunctionName: GylAdminTemplateGet
       Handler: index.handler
@@ -4726,7 +4813,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-template-delete-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-template-delete-dist.zip'
       Description: Deletes an email template.
       FunctionName: GylAdminTemplateDelete
       Handler: index.handler
@@ -4887,7 +4977,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-templates-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-templates-get-dist.zip'
       Description: Gets a list of meta info about templates.
       FunctionName: GylAdminTemplatesGet
       Handler: index.handler
@@ -5043,7 +5136,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-admin-unsubscribe-link-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-admin-unsubscribe-link-get-dist.zip'
       Description: Gets the unsubscribe link
       FunctionName: GylAdminUnsubscribeLinkGet
       Handler: index.handler

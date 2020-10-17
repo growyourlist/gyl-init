@@ -6,6 +6,7 @@ const Logger = require('../Logger');
 const ensureLatestRelease = require('../common/ensureLatestRelease');
 const ensureTempDirExistsSync = require('../common/ensureTempDirExistsSync');
 const generateBucketId = require('../common/generateBucketId');
+const { GylVersion } = require('../GylVersion');
 
 const ensureCloudProjectFolderExists = async (tempCloudDir) => {
 	if (process.env.SKIP_LATEST_CLOUD_FUNCTIONS_CHECK) {
@@ -38,7 +39,17 @@ const uploadLambdaFunctionsToS3 = async (existingBucketName = '') => {
 	const s3 = new AWS.S3();
 	const Bucket = existingBucketName || `gyl-lambda-dist-${generateBucketId()}`;
 	if (existingBucketName) {
-		await s3.headBucket({ Bucket }).promise();
+		try {
+			await s3.headBucket({ Bucket }).promise();
+		} catch (err) {
+			if (err.statusCode === 404) {
+				Logger.log(`Recreating lambda bucket ${Bucket} because it was not found.`)
+				await s3.createBucket({ Bucket }).promise();
+			}
+			else {
+				throw err;
+			}
+		}
 	} else {
 		await s3.createBucket({ Bucket }).promise();
 	}
@@ -56,7 +67,7 @@ const uploadLambdaFunctionsToS3 = async (existingBucketName = '') => {
 			s3
 				.putObject({
 					Bucket,
-					Key: `${dir}-${zipName}`,
+					Key: `${GylVersion}-${dir}-${zipName}`,
 					ContentType: 'application/zip',
 					Body: readFileSync(join(tempCloudFuncsDir, dir, zipName)),
 				})

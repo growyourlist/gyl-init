@@ -981,7 +981,10 @@ const generateLambdaYaml = (methodName, def) => {
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: ${def['zipfile']}
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-${def['zipfile']}'
       Description: ${def['description']}
       FunctionName: ${methodName}
       Handler: index.handler

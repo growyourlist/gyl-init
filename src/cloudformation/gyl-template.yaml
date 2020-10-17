@@ -730,7 +730,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-react-to-interaction-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-react-to-interaction-dist.zip'
       Description: Lambda function to react to interactions with emails.
       FunctionName: GylReactToInteraction
       Handler: index.handler
@@ -829,7 +832,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-react-to-unsubscribe-event-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-react-to-unsubscribe-event-dist.zip'
       Description: Lambda function to react to unsubscribe events.
       FunctionName: GylReactToUnsubscribeEventLambda
       Handler: index.handler
@@ -874,6 +880,7 @@ Resources:
         GylReactToInteractionLambdaArn: !GetAtt
           - GylReactToInteractionLambda
           - Arn
+        GylVersion: !Ref GylVersion
       TemplateURL: !Ref GylAdminApiStackTemplateUrl
 
   # Public API Meta
@@ -1012,7 +1019,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-public-subscriber-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-public-subscriber-post-dist.zip'
       Description: Posts a subscriber from a public location and sends confirmation email
       FunctionName: GylSubscriberPost
       Handler: index.handler
@@ -1199,7 +1209,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-public-subscriber-confirm-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-public-subscriber-confirm-get-dist.zip'
       Description: Confirms a subscriber in response to link click
       FunctionName: GylSubscriberConfirmGet
       Handler: index.handler
@@ -1369,7 +1382,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-public-subscriber-unsubscribe-get-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-public-subscriber-unsubscribe-get-dist.zip'
       Description: Gets a public unsubscribe request
       FunctionName: GylSubscriberUnsubscribeGet
       Handler: index.handler
@@ -1524,7 +1540,10 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Ref LambdaBucketName
-        S3Key: gyl-public-subscriber-unsubscribe-post-dist.zip
+        S3Key: !Join
+          - ''
+          - - !Ref GylVersion
+            - '-gyl-public-subscriber-unsubscribe-post-dist.zip'
       Description: Posts a public unsubscribe request
       FunctionName: GylSubscriberUnsubscribePost
       Handler: index.handler
