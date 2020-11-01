@@ -181,8 +181,9 @@ ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
 		await updateSesEventDestinations(outputs);
 		// TODO decide what to do about populateDb equivalent for updates
 		Logger.log('Populate DB is currently a manual step for update processes');
-		const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?id={{subscriberId}}`;
-		await updateEnvironmentVars(unsubscribeLink);
+		await updateEnvironmentVars({
+			publicApiUrl: `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}`
+		});
 		await updateUsers(DbTablePrefix);
 
 		Logger.log('\n# GrowYourList Details\n');
