@@ -13,7 +13,7 @@
 		"hash": "node src/hash-key-cli"
 	},
 	"dependencies": {
-		"adm-zip": "^0.4.16",
+		"adm-zip": "^0.5.1",
 		"aws-sdk": "^2.727.1",
 		"bcrypt": "^5.0.0",
 		"dotenv": "^8.2.0",

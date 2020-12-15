@@ -404,6 +404,38 @@ const adminApiShorthand = {
 					},
 				},
 			},
+			Email: {
+				_methods: {
+					POST: {
+						useAuthorizer: true,
+						role: {
+							permissions: [
+								{
+									actions: ['dynamodb:GetItem', 'dynamodb:UpdateItem'],
+									resource: '!Ref GylSubscribersTableArn',
+								},
+								{
+									actions: ['dynamodb:Query'],
+									resource: '!Ref GylQueueTableArn',
+									resourceNameSuffix: '/index/SubscriberIdIndex',
+								},
+								{
+									actions: ['dynamodb:UpdateItem'],
+									resource: '!Ref GylQueueTableArn',
+								},
+							],
+						},
+						func: {
+							zipfile: 'gyl-admin-subscriber-email-post-dist.zip',
+							description:
+								"Handles requests to update a subscriber's email address.",
+							env: {
+								DB_TABLE_PREFIX: '!Ref DbTablePrefix',
+							},
+						},
+					},
+				},
+			},
 			Queue: {
 				_methods: {
 					GET: {
@@ -500,7 +532,7 @@ const adminApiShorthand = {
 								},
 								{
 									actions: ['dynamodb:BatchWriteItem'],
-									resource: '!Ref GylQueueTableArn'
+									resource: '!Ref GylQueueTableArn',
 								},
 								{
 									actions: ['dynamodb:Query'],
