@@ -5,6 +5,7 @@ const AWS = getAWS();
 const Logger = require('../Logger');
 const { GylMainEc2KeyName } = require('../common/resourceNames');
 const getUserInput = require('../other/getUserInput');
+const { cwd } = require('process');
 
 const dbStackName = 'GrowYourListDb';
 const StackName = 'GrowYourList';
@@ -136,7 +137,10 @@ const updateCloudFormationStack = async (params) => {
 	if (dbChanges) {
 		console.log(`\n# Changes to the stack: ${dbStackName}\n`);
 		console.log(JSON.stringify(dbChanges) + '\n');
-
+		const now = new Date();
+		const changeStackName = path.join(cwd(), `${dbStackName}-change-stack-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}.json`);
+		fs.writeFileSync(changeStackName, JSON.stringify(dbChanges, null, 2));
+		console.log(`Full DB change stack written to: ${changeStackName}`);
 		console.log(
 			'WARNING: BACK UP YOUR DATABASE (i.e. DynamoDB tables) BEFORE PROCEEDING. CHANGES TO THE DATABASE ARE LIKELY TO DELETE ALL DATA.' +
 				'\n'
@@ -230,6 +234,10 @@ const updateCloudFormationStack = async (params) => {
 	if (mainChanges) {
 		console.log(`\n# Changes to the stack: ${StackName}\n`);
 		console.log(JSON.stringify(mainChanges) + '\n');
+		const now = new Date();
+		const changeStackName = path.join(cwd(), `${StackName}-change-stack-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}.json`);
+		fs.writeFileSync(changeStackName, JSON.stringify(mainChanges, null, 2));
+		console.log(`Full change stack written to: ${changeStackName}`);
 		const input = await getUserInput('Proceed? [y/any key to cancel]: ');
 		if (input.toLocaleLowerCase() !== 'y') {
 			Logger.log('Cancelled update, exiting.');
