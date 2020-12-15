@@ -1,7 +1,7 @@
 const Logger = require('../Logger');
 const AWS = require('../getAWS')();
 
-const updateEnvironmentVars = async (unsubscribeLink) => {
+const updateEnvironmentVars = async (varData = {}) => {
 	Logger.info(
 		'Updating UNSUBSCRIBE_LINK variable for GylAdminUnsubscribeLinkGet Lambda'
 	);
@@ -10,7 +10,9 @@ const updateEnvironmentVars = async (unsubscribeLink) => {
 		.updateFunctionConfiguration({
 			FunctionName: 'GylAdminUnsubscribeLinkGet',
 			Environment: {
-				Variables: { UNSUBSCRIBE_LINK: unsubscribeLink },
+				Variables: {
+					UNSUBSCRIBE_LINK: `${varData.publicApiUrl}/subscriber/unsubscribe?id={{subscriberId}}`
+				},
 			},
 		})
 		.promise();
