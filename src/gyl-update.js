@@ -4,6 +4,7 @@ const readline = require('readline');
 const cryto = require('crypto');
 const bcrypt = require('bcrypt');
 const Logger = require('./Logger');
+const deployApis = require('./api-gateway/deployApis');
 const getUserInput = require('./other/getUserInput');
 const getSesSourceEmail = require('./ses/getSesSourceEmail');
 const getCurrentSesSourceEmail = require('./ses/getCurrentSesSourceEmail');
@@ -165,6 +166,12 @@ ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
 			Ec2InstanceType,
 			GylVersion,
 		});
+		await deployApis([
+			{
+				restApiId: outputs['GYL Admin API'],
+				stageName: outputs['GYL Admin API Stage'],
+			},
+		]);
 		// const cf = new AWS.CloudFormation();
 		// const res1 = await cf
 		// 	.describeStacks({

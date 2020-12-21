@@ -1708,6 +1708,11 @@ Outputs:
   GylPublicApiBetaStage:
     Description: 'GYL Public API Stage'
     Value: !Ref GylPublicApiBetaStage
+  GylAdminApi:
+    Description: 'GYL Admin API'
+    Value: !GetAtt
+      - GylAdminApiStack
+      - Outputs.GylAdminApi
   GylAdminApiUrl:
     Description: 'GYL Admin API Url'
     Value: !Join
