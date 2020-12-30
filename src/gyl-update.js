@@ -141,13 +141,13 @@ ${showChange('SesSourceEmail', SesSourceEmailOld, SesSourceEmail)}
 ${showChange('AdminEmail', AdminEmailOld, AdminEmail)}
 ${showChange('GylEc2InstanceType', GylEc2InstanceTypeOld, Ec2InstanceType)}
 ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
-		// const confirmChanges = await getUserInput(
-		// 	'Continue? [y/any key to exit]: '
-		// );
-		// if (confirmChanges.toLocaleLowerCase() !== 'y') {
-		// 	Logger.log('Exiting update process.');
-		// 	return;
-		// }
+		const confirmChanges = await getUserInput(
+			'Continue? [y/any key to exit]: '
+		);
+		if (confirmChanges.toLocaleLowerCase() !== 'y') {
+			Logger.log('Exiting update process.');
+			return;
+		}
 
 		Logger.log(
 			'\n## Uploading new version of GYL Software ##\n' +
