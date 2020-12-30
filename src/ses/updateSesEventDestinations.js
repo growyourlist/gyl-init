@@ -1,5 +1,6 @@
 const AWS = require('../getAWS')();
 const Logger = require('../Logger');
+const getUserInput = require('../other/getUserInput');
 
 const arraysHaveSameItems = (a = [], b = []) => {
 	if (a === b) {
@@ -42,12 +43,19 @@ const ensureUpToDate = async (configSet, currentDestinations, eventDef) => {
 			.promise();
 	} else if (!definitionsMatch(currentDef, eventDef)) {
 		Logger.info(`Updating SesEventDestination ${eventDef.Name}`);
-		await ses
-			.updateConfigurationSetEventDestination({
-				ConfigurationSetName: configSet,
-				EventDestination: eventDef,
-			})
-			.promise();
+		Logger.log(`Should:`)
+		Logger.log(currentDef)
+		Logger.log('be updated to match:')
+		Logger.log(eventDef)
+		const userInput = await getUserInput('y/any other key to skip: ');
+		if (userInput.toLocaleLowerCase() === 'y') {
+			await ses
+				.updateConfigurationSetEventDestination({
+					ConfigurationSetName: configSet,
+					EventDestination: eventDef,
+				})
+				.promise();
+		}
 	} else {
 		Logger.info(`SesEventDestination ${eventDef.Name} already up to date`);
 	}
