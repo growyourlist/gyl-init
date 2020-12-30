@@ -1,8 +1,6 @@
-const loadConfig = require('../loadConfig');
 const getAWS = require('../getAWS');
 
 const updateUsers = async (dbTablePrefix) => {
-	await loadConfig();
 	const region = process.env.AWS_REGION;
 	const accountId = process.env.AWS_ACCOUNT_ID;
 
@@ -32,6 +30,7 @@ const updateUsers = async (dbTablePrefix) => {
 			(stmt) => stmt.Resource === bqrArn
 		);
 		if (!broadcastQueuePolicy) {
+			Logger.log('Updating GylBroadcastUserPolicy...')
 			policyDoc.Statement.push({
 				Effect: 'Allow',
 				Action: [
@@ -65,7 +64,6 @@ const updateUsers = async (dbTablePrefix) => {
 					Resource: subscribersArn,
 				})
 			}
-
 			await iam
 				.createPolicyVersion({
 					PolicyArn,
