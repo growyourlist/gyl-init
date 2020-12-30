@@ -172,22 +172,7 @@ ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
 				stageName: outputs['GYL Admin API Stage'],
 			},
 		]);
-		// const cf = new AWS.CloudFormation();
-		// const res1 = await cf
-		// 	.describeStacks({
-		// 		StackName: 'GrowYourList',
-		// 	})
-		// 	.promise();
-		// const st1 = res1.Stacks[0];
-		// const outputs = {};
-		// st1.Outputs.forEach((output) => {
-		// 	outputs[output.Description] = output.OutputValue;
-		// });
-		// Logger.log('OUTPUTS');
-		// Logger.log(outputs);
 		await updateSesEventDestinations(outputs);
-		// TODO decide what to do about populateDb equivalent for updates
-		Logger.log('Populate DB is currently a manual step for update processes');
 		await updateEnvironmentVars({
 			publicApiUrl: `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}`
 		});
