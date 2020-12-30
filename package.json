@@ -1,7 +1,7 @@
 {
 	"name": "gyl-init",
-	"description": "Initialises a new version of GrowYourList or destructs it.",
-	"version": "0.3.6",
+	"description": "Initialises, updates, or destructs GrowYourList instances.",
+	"version": "0.4.0",
 	"license": "MIT",
 	"main": "src/index",
 	"devDependencies": {
