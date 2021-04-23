@@ -1,8 +1,7 @@
 const AWS = require('../getAWS')();
 
-const apiGateway = new AWS.APIGateway()
-
 const deployApi = async (apiInfo) => {
+	const apiGateway = new AWS.APIGateway();
 	const { restApiId, stageName } = apiInfo;
 	await apiGateway.createDeployment({
 		restApiId,
