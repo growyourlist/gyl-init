@@ -1,29 +1,16 @@
 const AWS = require('./getAWS')();
 const loadConfig = require('./loadConfig');
-const readline = require('readline');
-const cryto = require('crypto');
-const bcrypt = require('bcrypt');
 const Logger = require('./Logger');
 const deployApis = require('./api-gateway/deployApis');
 const getUserInput = require('./other/getUserInput');
 const getSesSourceEmail = require('./ses/getSesSourceEmail');
-const getCurrentSesSourceEmail = require('./ses/getCurrentSesSourceEmail');
 const getAdminEmail = require('./ses/getAdminEmail');
-const setSesEventDestinations = require('./ses/setSesEventDestinations');
 const updateSesEventDestinations = require('./ses/updateSesEventDestinations');
-const createKeyPair = require('./ec2/createKeyPair');
 const uploadLambdaFunctions = require('./s3/uploadLambdaFunctions');
-const createCloudFormationStack = require('./cloudformation/createCloudFormationStack');
 const updateCloudFormationStack = require('./cloudformation/updateCloudFormationStack');
-const populateDb = require('./dynamodb/populateDb');
-const getPostalAddress = require('./other/getPostalAddress');
-const setEnvironmentVars = require('./lambda/setEnvironmentVars');
 const updateEnvironmentVars = require('./lambda/updateEnvironmentVars');
 const getEc2InstanceType = require('./ec2/getEc2InstaceType');
 const { GylVersion } = require('./GylVersion');
-
-const createUsers = require('./iam/createUsers');
-const { realpath } = require('fs');
 const updateUsers = require('./iam/updateUsers');
 
 const showChange = (paramName = '', oldValue = '', newValue = '') => {
@@ -89,7 +76,8 @@ ${stackDetails}
 GrowYourList is already up to date (version ${GylVersion}) ✔`);
 			return;
 		}
-		Logger.log(`Found the following GrowYourList stack to update (you can change some of these details during the update):
+		Logger.log(`Found the following GrowYourList stack to update (you can `
+		+ `change some of these details during the update):
 ${stackDetails}
 This stack will be updated to GYL version ${GylVersion}`);
 		const SesSourceEmailOld = checkParams.find(
