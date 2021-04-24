@@ -138,7 +138,17 @@ const updateCloudFormationStack = async (params) => {
 		console.log(`\n# Changes to the stack: ${dbStackName}\n`);
 		console.log(JSON.stringify(dbChanges) + '\n');
 		const now = new Date();
-		const changeStackName = path.join(cwd(), `${dbStackName}-change-stack-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}.json`);
+		const changeStackName = path.join(cwd(), `${dbStackName}-change-stack-${
+			now.getFullYear()
+		}-${
+			now.getMonth() + 1
+		}-${
+			now.getDate()
+		}-${
+			now.getHours()
+		}-${
+			now.getMinutes()
+		}.json`);
 		fs.writeFileSync(changeStackName, JSON.stringify(dbChanges, null, 2));
 		console.log(`Full DB change stack written to: ${changeStackName}`);
 		console.log(
@@ -235,7 +245,17 @@ const updateCloudFormationStack = async (params) => {
 		console.log(`\n# Changes to the stack: ${StackName}\n`);
 		console.log(JSON.stringify(mainChanges) + '\n');
 		const now = new Date();
-		const changeStackName = path.join(cwd(), `${StackName}-change-stack-${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${now.getMinutes()}.json`);
+		const changeStackName = path.join(cwd(), `${StackName}-change-stack-${
+			now.getFullYear()
+		}-${
+			now.getMonth() + 1
+		}-${
+			now.getDate()
+		}-${
+			now.getHours()
+		}-${
+			now.getMinutes()
+		}.json`);
 		fs.writeFileSync(changeStackName, JSON.stringify(mainChanges, null, 2));
 		console.log(`Full change stack written to: ${changeStackName}`);
 		const input = await getUserInput('Proceed? [y/any key to cancel]: ');
