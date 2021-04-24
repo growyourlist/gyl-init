@@ -173,34 +173,6 @@ ${showChange('GylVersion', GylVersionOld, GylVersion)}`);
 			`GYL API URL: ${outputs['GYL Admin API Url']}${outputs['GYL Admin API Stage']}`
 		);
 		Logger.log(`\nSuccessfully updated GrowYourList to ${GylVersion}\n`);
-
-		// const DbTablePrefix = await generateTablePrefix();
-		// const users = await createUsers(DbTablePrefix);
-		// await createKeyPair();
-		// const ApiAuthKey = await generateAuthKey();
-		// const ApiAuthKeyHash = await hash(ApiAuthKey);
-		// const LambdaBucketName = await uploadLambdaFunctions();
-		// const outputs = await createCloudFormationStack({
-		// 	LambdaBucketName,
-		// 	GylEc2InstanceType,
-		// 	ApiAuthKeyHash,
-		// 	DbTablePrefix,
-		// 	SesSourceEmail,
-		// 	QueueUser: users.GylQueueUser,
-		// 	BroadcastUser: users.GylBroadcastUser,
-		// 	AdminEmail,
-		// });
-		// // Ses EventDestinations cannot be created in CloudFormation, so they're
-		// // done separately here.
-		// await setSesEventDestinations(outputs);
-		// await populateDb(DbTablePrefix, SesSourceEmail, footerAddress);
-		// const unsubscribeLink = `${outputs['GYL Public API Url']}${outputs['GYL Public API Stage']}/subscriber/unsubscribe?id={{subscriberId}}`;
-		// await setEnvironmentVars(unsubscribeLink);
-		// Logger.log(`EC2 Hostname: ${outputs['EC2 Hostname']}`);
-		// Logger.log(
-		// 	`GYL API URL: ${outputs['GYL Admin API Url']}${outputs['GYL Admin API Stage']}`
-		// );
-		// Logger.log(`GYL API Auth Key: ${ApiAuthKey}`);
 	} catch (err) {
 		console.error(err);
 	}
