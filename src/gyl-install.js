@@ -14,6 +14,7 @@ const setEnvironmentVars = require('./lambda/setEnvironmentVars');
 const getEc2InstanceType = require('./ec2/getEc2InstaceType');
 
 const createUsers = require('./iam/createUsers');
+const updateUsers = require('./iam/updateUsers');
 
 const generateAuthKey = async () => {
 	return cryto.randomBytes(24).toString('hex');
@@ -53,6 +54,8 @@ const init = async () => {
 		);
 		const DbTablePrefix = await generateTablePrefix();
 		const users = await createUsers(DbTablePrefix);
+		// Ensure users have all permissions added in updates.
+		await updateUsers(DbTablePrefix);
 		await createKeyPair();
 		const ApiAuthKey = await generateAuthKey();
 		const ApiAuthKeyHash = await hash(ApiAuthKey);
