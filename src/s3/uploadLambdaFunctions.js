@@ -33,9 +33,16 @@ const uploadLambdaFunctionsToS3 = async (existingBucketName = '') => {
 	Logger.log(
 		`${existingBucketName ? 'Updating' : 'Uploading'} lambda functions...`
 	);
-	const tempCloudFuncsDir = join(process.cwd(), 'temp', 'gyl-cloud-functions');
-	ensureTempDirExistsSync(tempCloudFuncsDir);
-	await ensureCloudProjectFolderExists(tempCloudFuncsDir);
+	let cloudFunctionsDir = '';
+	if (process.env.CLOUD_FUNCS_SOURCE_DIR) {
+		cloudFunctionsDir = process.env.CLOUD_FUNCS_SOURCE_DIR
+	} else {
+		const tempCloudFuncsDir = join(process.cwd(), 'temp', 'gyl-cloud-functions');
+		ensureTempDirExistsSync(tempCloudFuncsDir);
+		await ensureCloudProjectFolderExists(tempCloudFuncsDir);
+		cloudFunctionsDir = tempCloudFuncsDir;
+	}
+	Logger.log(`Using cloud functions from directory: ${cloudFunctionsDir}`)
 	const s3 = new AWS.S3();
 	const Bucket = existingBucketName || `gyl-lambda-dist-${generateBucketId()}`;
 	if (existingBucketName) {
@@ -54,12 +61,12 @@ const uploadLambdaFunctionsToS3 = async (existingBucketName = '') => {
 		await s3.createBucket({ Bucket }).promise();
 	}
 	const zipName = 'dist.zip';
-	const cloudFunctionDirectories = readdirSync(tempCloudFuncsDir, {
+	const cloudFunctionDirectories = readdirSync(cloudFunctionsDir, {
 		withFileTypes: true,
 	})
 		.filter(
 			(i) =>
-				i.isDirectory() && existsSync(join(tempCloudFuncsDir, i.name, zipName))
+				i.isDirectory() && existsSync(join(cloudFunctionsDir, i.name, zipName))
 		)
 		.map((i) => i.name);
 	await Promise.all(
@@ -69,7 +76,7 @@ const uploadLambdaFunctionsToS3 = async (existingBucketName = '') => {
 					Bucket,
 					Key: `${GylVersion}-${dir}-${zipName}`,
 					ContentType: 'application/zip',
-					Body: readFileSync(join(tempCloudFuncsDir, dir, zipName)),
+					Body: readFileSync(join(cloudFunctionsDir, dir, zipName)),
 				})
 				.promise()
 		)
